@@ -21,468 +21,603 @@ const { useState, useEffect, useRef, useCallback } = React;
 // ─── PHASES ───────────────────────────────────────────────────────────────────
 const PHASES = [
   {
-    id: 1,
-    name: "FOUNDATION",
-    sub: "Cardiac Rehab · Movement Re-Patterning",
-    color: "#E87B6E",
-    weeks: "Months 1–2",
-    hrCeiling: 120,
-    rpe: 6,
-    description: "Rebuild the foundation. Establish movement patterns, let the heart heal, and restore confidence under load. DBs and machines only. No Valsalva. No ego.",
-    cardioTarget: "30–35 min Zone 2 · HR 100–115",
-    criteria: [
-      "No chest pain, dizziness, or unusual SOB during training",
-      "HR returning below 100 BPM within 5 min post-set",
-      "Completed 6+ weeks of consistent training",
-      "Cardiologist cleared for increased intensity",
-    ],
-    unlocks: ["Dumbbell movements only", "Machine compounds", "Bodyweight progressions", "Zone 2 cardio only"],
+    id:1, name:"FOUNDATION", sub:"Cardiac Rehab · Movement Re-Patterning",
+    color:"#E87B6E", weeks:"Months 1–2", hrCeiling:120, rpe:6,
+    description:"Rebuild the foundation. Establish movement patterns, let the heart heal, restore confidence under load. DBs and machines only. No Valsalva. No ego.",
+    cardioTarget:"30–35 min Zone 2 · HR 100–115",
+    criteria:["No chest pain, dizziness, or unusual SOB during training","HR returning below 100 BPM within 5 min post-set","Completed 6+ weeks of consistent training","Cardiologist cleared for increased intensity"],
+    unlocks:["Dumbbell movements only","Machine compounds","Bodyweight progressions","Zone 2 cardio only"],
   },
   {
-    id: 2,
-    name: "BUILD",
-    sub: "Hypertrophy Volume · Moderate Intensity",
-    color: "#C9A84C",
-    weeks: "Months 3–4",
-    hrCeiling: 130,
-    rpe: 7,
-    description: "Volume accumulation. CBum-style tempo work, wave loading, and superset architecture. Hypertrophy is the primary driver. Cardiac parameters expand but remain respected.",
-    cardioTarget: "35–45 min Zone 2 · HR 105–125",
-    criteria: [
-      "HR ceiling can be raised to 140 BPM per cardiologist",
-      "No cardiac events or symptoms in Phase 2",
-      "8+ weeks of consistent Phase 2 training",
-      "Cardiologist cleared for barbell movements",
-    ],
-    unlocks: ["Full machine compound suite", "Higher rep ranges", "Superset architecture", "Cardio volume increase"],
+    id:2, name:"BUILD", sub:"Hypertrophy Volume · Moderate Intensity",
+    color:"#C9A84C", weeks:"Months 3–4", hrCeiling:130, rpe:7,
+    description:"Volume accumulation. CBum-style tempo work, wave loading, superset architecture. Hypertrophy is the primary driver. Cardiac parameters expand but remain respected.",
+    cardioTarget:"35–45 min Zone 2 · HR 105–125",
+    criteria:["HR ceiling raised to 140 BPM per cardiologist","No cardiac events or symptoms in Phase 2","8+ weeks of consistent Phase 2 training","Cardiologist cleared for barbell movements"],
+    unlocks:["Full machine compound suite","Wave loading + supersets","Drop sets on A and C series","Cardio volume increase"],
   },
   {
-    id: 3,
-    name: "STRENGTHEN",
-    sub: "Barbell Reintroduction · Running Intervals",
-    color: "#7EB8D4",
-    weeks: "Months 5–6",
-    hrCeiling: 140,
-    rpe: 8,
-    description: "Barbell movements return. Squat, deadlift, and bench reintroduced with controlled progression. Running intervals begin. Strength and athleticism rebuild in parallel.",
-    cardioTarget: "40–50 min · Zone 2 + 3 intervals · HR up to 140",
-    criteria: [
-      "6+ months post-surgery with full cardiologist clearance",
-      "No symptoms during Phase 3 training",
-      "HR recovery under 2 min post-set",
-      "Cleared for high-intensity interval training",
-    ],
-    unlocks: ["Barbell squat and deadlift", "Barbell bench press", "Running intervals", "Heavier loading ranges"],
+    id:3, name:"STRENGTHEN", sub:"Barbell Reintroduction · Running Intervals",
+    color:"#7EB8D4", weeks:"Months 5–6", hrCeiling:140, rpe:8,
+    description:"Barbell movements return. Squat, deadlift, bench, overhead press reintroduced with controlled progression. Running intervals begin. Strength and athleticism rebuild in parallel.",
+    cardioTarget:"40–50 min · Zone 2 + 3 intervals · HR up to 140",
+    criteria:["6+ months post-surgery with full cardiologist clearance","No symptoms during Phase 3 training","HR recovery under 2 min post-set","Cleared for high-intensity interval training"],
+    unlocks:["Barbell squat and deadlift","Barbell bench press","Running intervals","Heavier loading ranges"],
   },
   {
-    id: 4,
-    name: "ATHLETIC",
-    sub: "Full Program · Return to Run Protocol",
-    color: "#58A45C",
-    weeks: "Month 6+",
-    hrCeiling: 155,
-    rpe: 9,
-    description: "The Jackedlete in full. Maximum hypertrophy stimulus, athletic conditioning, and progressive running protocol. Built to last decades. This is where you live.",
-    cardioTarget: "Full Zone 2–4 training · Structured run program",
-    criteria: [],
-    unlocks: ["Full barbell program", "Progressive run protocol", "High intensity intervals", "Competition prep capable"],
+    id:4, name:"ATHLETIC", sub:"Full Program · Return to Run Protocol",
+    color:"#58A45C", weeks:"Month 6+", hrCeiling:155, rpe:9,
+    description:"The Jackedlete in full. Maximum hypertrophy stimulus, athletic conditioning, progressive running protocol. Built to last decades. This is where you live.",
+    cardioTarget:"Full Zone 2–4 training · Structured run program",
+    criteria:[], unlocks:["Full barbell program","Progressive run protocol","High intensity intervals","Competition prep capable"],
   },
 ];
 
 // ─── REST CONFIG ──────────────────────────────────────────────────────────────
 const REST_CONFIG = {
-  "A SERIES":          { upper:120, lower:150, label_u:"2:00 REST", label_l:"2:30 REST", cardiac:"Heavy compound — full HR recovery before next set" },
-  "B1/B2 SERIES":      { upper:90,  lower:90,  label_u:"1:30 REST", label_l:"1:30 REST", cardiac:"Superset — 90 sec minimum, monitor HR before proceeding" },
-  "C1/C2 SERIES":      { upper:60,  lower:60,  label_u:"1:00 REST", label_l:"1:00 REST", cardiac:"Pump finisher — lighter load, shorter rest appropriate" },
-  "MOVEMENT PREP":     { upper:45,  lower:45,  label_u:"0:45 REST", label_l:"0:45 REST", cardiac:"Mobility work — brief recovery" },
-  "ZONE 2 CARDIO":     { upper:0,   lower:0,   label_u:"",          label_l:"",          cardiac:"" },
-  "OPTIONAL FINISHER": { upper:60,  lower:60,  label_u:"1:00 REST", label_l:"1:00 REST", cardiac:"Loaded carry — moderate cardiac demand" },
-  "BARBELL WORK":      { upper:150, lower:180, label_u:"2:30 REST", label_l:"3:00 REST", cardiac:"Heavy barbell — maximum HR recovery, no rushing" },
-  "RUN INTERVALS":     { upper:120, lower:120, label_u:"2:00 REST", label_l:"2:00 REST", cardiac:"Running interval recovery — HR must drop below 120 before next" },
+  "A SERIES":      {upper:120,lower:150,label_u:"2:00",label_l:"2:30",cardiac:"Heavy compound — full HR recovery required"},
+  "BARBELL WORK":  {upper:150,lower:180,label_u:"2:30",label_l:"3:00",cardiac:"Heavy barbell — maximum HR recovery, no rushing"},
+  "B SERIES":      {upper:90, lower:90, label_u:"1:30",label_l:"1:30",cardiac:"Superset — 90 sec minimum, check HR before proceeding"},
+  "C1":            {upper:75, lower:75, label_u:"1:15",label_l:"1:15",cardiac:"Finisher — 75 sec, prep for drop set on final set"},
+  "C2":            {upper:60, lower:60, label_u:"1:00",label_l:"1:00",cardiac:"Burnout — 60 sec, metabolic stress is the goal"},
+  "MOVEMENT PREP": {upper:45, lower:45, label_u:"0:45",label_l:"0:45",cardiac:"Mobility — brief recovery only"},
+  "ZONE 2":        {upper:0,  lower:0,  label_u:"",    label_l:"",    cardiac:""},
+  "RUN INTERVALS": {upper:120,lower:120,label_u:"2:00",label_l:"2:00",cardiac:"HR must drop below 120 BPM before next interval"},
+  "FINISHER":      {upper:60, lower:60, label_u:"1:00",label_l:"1:00",cardiac:"Loaded carry — moderate cardiac demand"},
 };
 const LOWER_DAYS = ["PUSH A","PUSH B"];
 function getRestInfo(sn, dl) {
-  const cfg = REST_CONFIG[sn] || { upper:90, lower:90, label_u:"1:30 REST", label_l:"1:30 REST", cardiac:"" };
-  const isL = LOWER_DAYS.includes(dl) && sn==="A SERIES";
-  return { secs:isL?cfg.lower:cfg.upper, label:isL?cfg.label_l:cfg.label_u, cardiac:cfg.cardiac };
+  const key = Object.keys(REST_CONFIG).find(k=>sn.startsWith(k)||sn.includes(k)) || "C2";
+  const cfg = REST_CONFIG[key] || REST_CONFIG["C2"];
+  const isL = LOWER_DAYS.includes(dl) && (sn==="A SERIES"||sn==="BARBELL WORK");
+  return {secs:isL?cfg.lower:cfg.upper, label:isL?cfg.label_l:cfg.label_u, cardiac:cfg.cardiac};
 }
 
-// ─── DROP SET CONFIG ──────────────────────────────────────────────────────────
-// dropSets: array per working set — null = no drop, {drops, repTarget, pctDrop}
-// Phase 1: 1 drop only on final set of wave
-// Phase 2: 1 drop on 6-rep sets, 2 drops on final set
-// Phase 3/4: 2 drops on heavy 6-rep sets, 1 drop on 8-rep sets
-function makeDrops(repsScheme, phase) {
-  return repsScheme.map((rep, i) => {
-    const isHeavy = rep === "6";
-    const isVolume = rep === "8";
-    const isLast = i === repsScheme.length - 1;
-    const isFive = rep === "5" || rep === "4";
-    if (phase === 1) {
-      // Only final set gets 1 drop
-      return isLast ? { drops: 1, repTarget: isHeavy ? "10-12" : "10", pct: 20 } : null;
-    }
-    if (phase === 2) {
-      if (isHeavy && isLast) return { drops: 2, repTarget: "10-12 → 15", pct: 20 };
-      if (isHeavy) return { drops: 1, repTarget: "10-12", pct: 20 };
-      if (isVolume && isLast) return { drops: 1, repTarget: "10", pct: 15 };
+// ─── DROP SET ENGINE ──────────────────────────────────────────────────────────
+// Detects pattern and assigns drops intelligently per set
+function makeDrops(repsScheme, phase, isFinisher=false) {
+  const nums = repsScheme.map(r=>parseInt(r)||0).filter(n=>n>0);
+  const isDescending = nums.length>=3 && nums[nums.length-1]<nums[0] && nums[0]>=8;
+  const isWave = repsScheme.includes("6")&&repsScheme.includes("8");
+
+  return repsScheme.map((rep,i)=>{
+    const n = parseInt(rep)||0;
+    const isLast = i===repsScheme.length-1;
+    const isHeavy = n<=6 && n>=3;
+    const isVol = n===8;
+
+    // Finisher descending: double drop on final set only
+    if(isFinisher||isDescending){
+      if(isLast) return {drops:2, repTarget:"10-12 → 15+", pct:25};
       return null;
     }
-    if (phase === 3) {
-      if (isHeavy || isFive) return { drops: 2, repTarget: "10-12 → 15", pct: 20 };
-      if (isVolume) return { drops: 1, repTarget: "10", pct: 15 };
-      return null;
+    // Wave loading A series
+    if(isWave){
+      if(phase===1) return isLast?{drops:1,repTarget:"10-12",pct:20}:null;
+      if(phase===2){
+        if(isHeavy&&isLast) return {drops:2,repTarget:"10-12 → 15",pct:20};
+        if(isHeavy) return {drops:1,repTarget:"10-12",pct:20};
+        if(isVol&&isLast) return {drops:1,repTarget:"10",pct:15};
+        return null;
+      }
+      if(phase===3){
+        if(isHeavy) return {drops:2,repTarget:"10-12 → 15",pct:20};
+        if(isVol) return {drops:1,repTarget:"10-12",pct:15};
+        return null;
+      }
+      if(phase===4){
+        if(isHeavy) return {drops:2,repTarget:"8-10 → 12-15",pct:20};
+        if(isVol) return {drops:1,repTarget:"10-12",pct:15};
+        return null;
+      }
     }
-    if (phase === 4) {
-      if (isFive || isHeavy) return { drops: 2, repTarget: "8-10 → 12-15", pct: 20 };
-      if (isVolume) return { drops: 1, repTarget: "10-12", pct: 15 };
+    // Barbell heavy (5/3/3/3 etc)
+    if(n<=5&&n>=1){
+      if(phase>=3&&isLast) return {drops:2,repTarget:"8-10 → 12",pct:20};
       return null;
     }
     return null;
   });
 }
 
-// ─── PROGRAM DATA BY PHASE ────────────────────────────────────────────────────
+// ─── PROGRAM DATA ─────────────────────────────────────────────────────────────
 const PROGRAMS = {
 
-  // ── PHASE 1 ─────────────────────────────────────────────────────────────────
-  1: [
-    {
-      id:"p1d1",day:"01",label:"PUSH A",sub:"Chest · Quad · Tricep",color:"#E87B6E",
-      series:[
-        {id:"p1d1a",name:"A SERIES",type:"straight",exercises:[
-          {id:"p1d1a1",name:"Leg Press — Two Feet",sets:4,repsScheme:["12","10","10","10"],tempo:"2/0/X/0",cue:"Feet mid-platform. Controlled descent. Monitor HR."},
-        ]},
-        {id:"p1d1b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p1d1b1",name:"Goblet Squat",sets:3,repsScheme:["12","12","12"],tempo:"3/1/X/0",cue:"Single DB. 1-sec pause in hole. Feel quad load."},
-          {id:"p1d1b2",name:"Seated Leg Curl",sets:3,repsScheme:["12","12","12"],tempo:"3/0/1/0",cue:"Full hamstring stretch. Controlled lowering."},
-        ]},
-        {id:"p1d1c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p1d1c1",name:"DB Bench Press — Flat",sets:3,repsScheme:["12","12","12"],tempo:"3/0/X/0",cue:"Dumbbells only. Easier to bail safely. Full chest stretch."},
-          {id:"p1d1c2",name:"Cable Tricep Pushdown",sets:3,repsScheme:["15","15","15"],tempo:"2/0/1/0",cue:"Light weight. Full extension. Squeeze at bottom."},
-        ]},
-      ],
-    },
-    {
-      id:"p1d2",day:"02",label:"PULL A",sub:"Back · Hamstring · Bicep",color:"#E87B6E",
-      series:[
-        {id:"p1d2a",name:"A SERIES",type:"straight",exercises:[
-          {id:"p1d2a1",name:"Lat Pulldown — Wide Grip",sets:4,repsScheme:["12","10","10","10"],tempo:"2/0/X/0",cue:"Full stretch at top. Drive elbows down and back."},
-        ]},
-        {id:"p1d2b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p1d2b1",name:"Seated Cable Row",sets:3,repsScheme:["12","12","12"],tempo:"2/1/X/0",cue:"1-sec pause at full stretch. Squeeze mid-back."},
-          {id:"p1d2b2",name:"DB Lateral Raise",sets:3,repsScheme:["15","15","15"],tempo:"2/0/1/0",cue:"Light weight. Lead with elbow. 1-sec hold at peak."},
-        ]},
-        {id:"p1d2c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p1d2c1",name:"DB Hammer Curl",sets:3,repsScheme:["12","12","12"],tempo:"2/0/1/1",cue:"Neutral grip. 1-sec squeeze at top. No swing."},
-          {id:"p1d2c2",name:"Face Pull",sets:3,repsScheme:["15","15","15"],tempo:"2/0/1/1",cue:"Elbows high. Pull to ears. Rotator cuff health."},
-        ]},
-      ],
-    },
-    {
-      id:"p1d3",day:"03",label:"ATHLETIC",sub:"Remedial Movement · Zone 2",color:"#58A45C",
-      series:[
-        {id:"p1d3a",name:"MOVEMENT PREP",type:"straight",exercises:[
-          {id:"p1d3a1",name:"Hip 90/90 Stretch",sets:3,repsScheme:["60s","60s","60s"],tempo:"—",cue:"Each side. Hip internal/external rotation."},
-          {id:"p1d3a2",name:"Thoracic Rotation",sets:3,repsScheme:["10","10","10"],tempo:"—",cue:"Quadruped. Each side. Open toward ceiling."},
-          {id:"p1d3a3",name:"Single Leg Balance",sets:3,repsScheme:["30s","30s","30s"],tempo:"—",cue:"Each leg. Eyes open first, then close when easy."},
-          {id:"p1d3a4",name:"Lateral Band Walk",sets:3,repsScheme:["15","15","15"],tempo:"—",cue:"Each direction. Glute medius activation."},
-          {id:"p1d3a5",name:"Dead Hang",sets:3,repsScheme:["20s","20s","20s"],tempo:"—",cue:"Shoulder decompression. Passive hang."},
-        ]},
-        {id:"p1d3b",name:"ZONE 2 CARDIO",type:"straight",exercises:[
-          {id:"p1d3b1",name:"Stationary Bike / Easy Walk",sets:1,repsScheme:["30–35 min"],tempo:"—",cue:"HR 100–115 BPM. Conversational pace. This is medicine."},
-        ]},
-      ],
-    },
-    {
-      id:"p1d4",day:"04",label:"PUSH B",sub:"Shoulder · Quad · Tricep",color:"#E87B6E",
-      series:[
-        {id:"p1d4a",name:"A SERIES",type:"straight",exercises:[
-          {id:"p1d4a1",name:"Seated DB Shoulder Press",sets:4,repsScheme:["12","10","10","10"],tempo:"2/0/X/0",cue:"Seated = lower HR. Don't lock out at top."},
-        ]},
-        {id:"p1d4b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p1d4b1",name:"Walking Lunge — Bodyweight",sets:3,repsScheme:["10","10","10"],tempo:"2/0/X/0",cue:"Each leg. Upright torso. Controlled step."},
-          {id:"p1d4b2",name:"Leg Extension",sets:3,repsScheme:["15","15","15"],tempo:"2/0/1/1",cue:"Lean forward. Squeeze at top 1 sec. Light weight."},
-        ]},
-        {id:"p1d4c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p1d4c1",name:"Cable Lateral Raise",sets:3,repsScheme:["15","15","15"],tempo:"2/0/1/0",cue:"Constant tension. Lead with elbow. Feel medial delt."},
-          {id:"p1d4c2",name:"Overhead DB Tricep Extension",sets:3,repsScheme:["12","12","12"],tempo:"3/0/X/0",cue:"Long head stretch. Feel behind head. Controlled."},
-        ]},
-      ],
-    },
-    {
-      id:"p1d5",day:"05",label:"PULL B",sub:"Back · Hip Hinge · Bicep",color:"#E87B6E",
-      series:[
-        {id:"p1d5a",name:"A SERIES",type:"straight",exercises:[
-          {id:"p1d5a1",name:"Assisted Pull-Up or Band Pulldown",sets:4,repsScheme:["8","8","8","8"],tempo:"2/0/X/0",cue:"Full lat stretch at top. Drive elbows down."},
-        ]},
-        {id:"p1d5b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p1d5b1",name:"Romanian Deadlift — Dumbbell",sets:3,repsScheme:["12","12","12"],tempo:"3/1/X/0",cue:"Hip hinge. 1-sec pause at max hamstring stretch."},
-          {id:"p1d5b2",name:"Seated Calf Raise",sets:3,repsScheme:["15","15","15"],tempo:"2/2/X/1",cue:"2-sec pause at bottom stretch. Explosive drive up."},
-        ]},
-        {id:"p1d5c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p1d5c1",name:"Incline DB Curl",sets:3,repsScheme:["12","12","12"],tempo:"3/0/1/0",cue:"45° incline. Long head stretch at bottom."},
-          {id:"p1d5c2",name:"Cable Pushdown — Rope",sets:3,repsScheme:["15","15","15"],tempo:"2/0/1/0",cue:"Split rope at bottom. Squeeze lateral head."},
-        ]},
-      ],
-    },
-  ],
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 1 — FOUNDATION
+// ══════════════════════════════════════════════════════════════════════════════
+1: [
+  // DAY 1 — PUSH A
+  {
+    id:"p1d1",day:"01",label:"PUSH A",sub:"Chest · Quad · Tricep",color:"#E87B6E",
+    series:[
+      {id:"p1d1-A",name:"A SERIES",type:"straight",exercises:[
+        {id:"p1d1-A1",name:"Leg Press",sets:4,repsScheme:["12","10","10","8"],tempo:"3/0/X/0",
+         cue:"Feet mid-platform, hip width. Control the descent — 3 sec down, explosive drive. Sets climb in weight. Final set drop unlocks."},
+      ]},
+      {id:"p1d1-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p1d1-B1",name:"DB Bench Press — Flat",sets:3,repsScheme:["12","10","10"],tempo:"3/0/X/0",
+         cue:"DBs over each set — easier to bail than barbell. Full chest stretch at bottom. Drive elbows together at top. Monitor HR."},
+        {id:"p1d1-B2",name:"Seated Leg Curl",sets:3,repsScheme:["12","12","12"],tempo:"3/1/X/0",
+         cue:"1-sec pause at full stretch. Controlled return. Hamstring tension throughout. Final set gets a drop."},
+      ]},
+      {id:"p1d1-C1",name:"C1 — CHEST FINISHER",type:"straight",exercises:[
+        {id:"p1d1-C1a",name:"Pec Deck / Cable Fly",sets:3,repsScheme:["15","12","10"],tempo:"2/1/X/1",
+         cue:"1-sec squeeze at peak contraction every rep. Load climbs. Final set drop unlocks — strip 20%, hit 15 to failure. Feel the stretch at full extension."},
+      ]},
+      {id:"p1d1-C2",name:"C2 — TRICEP BURNOUT",type:"straight",exercises:[
+        {id:"p1d1-C2a",name:"Cable Tricep Pushdown — Rope",sets:3,repsScheme:["15","12","10"],tempo:"2/0/1/1",
+         cue:"Split rope at bottom. 1-sec squeeze. Load builds each set. Final set: drop 20%, 15 reps to failure. Elbows pinned to sides throughout."},
+      ]},
+    ],
+  },
 
-  // ── PHASE 2 ─────────────────────────────────────────────────────────────────
-  2: [
-    {
-      id:"p2d1",day:"01",label:"PUSH A",sub:"Chest · Quad · Tricep",color:"#C9A84C",
-      series:[
-        {id:"p2d1a",name:"A SERIES",type:"straight",exercises:[
-          {id:"p2d1a1",name:"Hack Squat — Medium Stance",sets:6,repsScheme:["8","6","8","6","6","8"],tempo:"2/0/X/0",cue:"Feet low/narrow. Quad stretch at bottom. Monitor HR."},
-        ]},
-        {id:"p2d1b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p2d1b1",name:"Front Foot Elevated DB Split Squat",sets:4,repsScheme:["6","10","10","10"],tempo:"3/1/X/0",cue:"1-sec pause in hole. Upright torso."},
-          {id:"p2d1b2",name:"Single Leg Lying Leg Curl",sets:4,repsScheme:["6","7","7","7"],tempo:"4/1/X/1",cue:"4-sec eccentric. Squeeze 1 sec at top."},
-        ]},
-        {id:"p2d1c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p2d1c1",name:"Incline DB Press",sets:3,repsScheme:["10","10","10"],tempo:"3/0/X/0",cue:"Drive elbows together at top. 30–45° incline."},
-          {id:"p2d1c2",name:"Cable Tricep Pushdown — Rope",sets:3,repsScheme:["12","12","12"],tempo:"2/0/1/1",cue:"Split rope at bottom. Squeeze 1 sec."},
-        ]},
-      ],
-    },
-    {
-      id:"p2d2",day:"02",label:"PULL A",sub:"Back · Hamstring · Bicep",color:"#C9A84C",
-      series:[
-        {id:"p2d2a",name:"A SERIES",type:"straight",exercises:[
-          {id:"p2d2a1",name:"Single Arm Supinated Lat Pulldown",sets:6,repsScheme:["8","6","8","6","6","8"],tempo:"2/0/X/0",cue:"Full stretch at top. Supination = lat-bicep tie-in."},
-        ]},
-        {id:"p2d2b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p2d2b1",name:"Neutral Chest Supported T-Bar Row",sets:4,repsScheme:["6","10","10","10"],tempo:"3/1/X/0",cue:"1-sec pause at full stretch. Drive elbows back hard."},
-          {id:"p2d2b2",name:"Single Arm Standing DB Lateral Raise",sets:4,repsScheme:["6","15","15","15"],tempo:"2/0/1/0",cue:"Lead with elbow. 1-sec hold at peak. Zero swing."},
-        ]},
-        {id:"p2d2c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p2d2c1",name:"Bent Over Supported Supinated DB Curl",sets:4,repsScheme:["6","15","15","15"],tempo:"2/0/1/1",cue:"No momentum. 1-sec squeeze + hold at bottom."},
-          {id:"p2d2c2",name:"Low Pulley Sideways D-Handle Cable Curl",sets:4,repsScheme:["6","10","10","10"],tempo:"3/0/1/0",cue:"Stand sideways to cable. Long head peak."},
-        ]},
-      ],
-    },
-    {
-      id:"p2d3",day:"03",label:"ATHLETIC",sub:"Remedial Movement · Zone 2",color:"#58A45C",
-      series:[
-        {id:"p2d3a",name:"MOVEMENT PREP",type:"straight",exercises:[
-          {id:"p2d3a1",name:"Hip 90/90 Stretch",sets:3,repsScheme:["60s","60s","60s"],tempo:"—",cue:"Each side. Hip internal/external rotation."},
-          {id:"p2d3a2",name:"Thoracic Rotation (Quadruped)",sets:3,repsScheme:["10","10","10"],tempo:"—",cue:"Each side. Open toward ceiling."},
-          {id:"p2d3a3",name:"Single Leg Balance Reach",sets:3,repsScheme:["10","10","10"],tempo:"—",cue:"Each leg. Reach opposite hand to floor."},
-          {id:"p2d3a4",name:"Lateral Band Walk",sets:3,repsScheme:["15","15","15"],tempo:"—",cue:"Each direction. Glute medius activation."},
-          {id:"p2d3a5",name:"Dead Hang",sets:3,repsScheme:["25s","25s","25s"],tempo:"—",cue:"Shoulder decompression. Passive hang."},
-        ]},
-        {id:"p2d3b",name:"ZONE 2 CARDIO",type:"straight",exercises:[
-          {id:"p2d3b1",name:"Stationary Bike / Easy Walk",sets:1,repsScheme:["35–45 min"],tempo:"—",cue:"HR 105–125 BPM. Full conversational pace."},
-        ]},
-        {id:"p2d3c",name:"OPTIONAL FINISHER",type:"straight",exercises:[
-          {id:"p2d3c1",name:"Farmer's Carry",sets:3,repsScheme:["40m","40m","40m"],tempo:"—",cue:"Moderate DBs. Grip, core, gait mechanics."},
-        ]},
-      ],
-    },
-    {
-      id:"p2d4",day:"04",label:"PUSH B",sub:"Shoulder · Quad Variation · Tricep",color:"#C9A84C",
-      series:[
-        {id:"p2d4a",name:"A SERIES",type:"straight",exercises:[
-          {id:"p2d4a1",name:"Seated DB Shoulder Press",sets:6,repsScheme:["8","6","8","6","6","8"],tempo:"2/0/X/0",cue:"Seated = lower HR. Don't lock out — keep delt tension."},
-        ]},
-        {id:"p2d4b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p2d4b1",name:"Cable Lateral Raise",sets:4,repsScheme:["6","15","15","15"],tempo:"2/0/1/0",cue:"Lean from cable. 1-sec hold at peak."},
-          {id:"p2d4b2",name:"Rope Face Pull",sets:4,repsScheme:["6","15","15","15"],tempo:"2/0/1/1",cue:"Elbows high. Pull to ears. 1-sec squeeze."},
-        ]},
-        {id:"p2d4c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p2d4c1",name:"Goblet Squat",sets:3,repsScheme:["10","12","12"],tempo:"3/1/X/0",cue:"1-sec pause in hole. Feel VMO load."},
-          {id:"p2d4c2",name:"Overhead Cable Tricep Extension",sets:3,repsScheme:["12","12","12"],tempo:"3/0/X/0",cue:"Face away. Feel long head stretch. 3-sec eccentric."},
-        ]},
-      ],
-    },
-    {
-      id:"p2d5",day:"05",label:"PULL B",sub:"Back Width · Hip Hinge · Bicep",color:"#C9A84C",
-      series:[
-        {id:"p2d5a",name:"A SERIES",type:"straight",exercises:[
-          {id:"p2d5a1",name:"Lat Pulldown — Wide Grip Overhand",sets:6,repsScheme:["8","6","8","6","6","8"],tempo:"2/0/X/0",cue:"Full stretch at top. Drive elbows down and back."},
-        ]},
-        {id:"p2d5b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p2d5b1",name:"Romanian Deadlift — Dumbbell",sets:4,repsScheme:["6","10","10","10"],tempo:"3/1/X/0",cue:"1-sec pause at max hamstring stretch. Push hips back."},
-          {id:"p2d5b2",name:"Seated Calf Raise",sets:4,repsScheme:["6","15","15","15"],tempo:"2/2/X/1",cue:"2-sec pause at bottom stretch. Explosive drive."},
-        ]},
-        {id:"p2d5c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p2d5c1",name:"Incline DB Curl",sets:4,repsScheme:["6","12","12","12"],tempo:"3/0/1/1",cue:"45–60° incline. Long head stretch. No swing."},
-          {id:"p2d5c2",name:"EZ Bar Skull Crusher",sets:4,repsScheme:["6","12","12","12"],tempo:"3/0/X/0",cue:"Drop bench to flat. Same bar. Lower to forehead slowly."},
-        ]},
-      ],
-    },
-  ],
+  // DAY 2 — PULL A
+  {
+    id:"p1d2",day:"02",label:"PULL A",sub:"Back · Hamstring · Bicep",color:"#E87B6E",
+    series:[
+      {id:"p1d2-A",name:"A SERIES",type:"straight",exercises:[
+        {id:"p1d2-A1",name:"Lat Pulldown — Wide Grip",sets:4,repsScheme:["12","10","10","8"],tempo:"2/0/X/1",
+         cue:"Full stretch at top — feel the lat lengthen. Drive elbows down and back. 1-sec squeeze at bottom. Weight builds each set, drop on final."},
+      ]},
+      {id:"p1d2-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p1d2-B1",name:"Seated Cable Row — Neutral Grip",sets:3,repsScheme:["12","10","10"],tempo:"3/1/X/0",
+         cue:"1-sec pause at full stretch — feel the rhomboids load. Drive elbows back and down. Squeeze mid-back 1 sec at contraction."},
+        {id:"p1d2-B2",name:"DB Lateral Raise",sets:3,repsScheme:["15","15","12"],tempo:"2/0/1/0",
+         cue:"Lead with elbow, not wrist. 1-sec hold at shoulder height. Weight builds on final set. Drop set follows final set."},
+      ]},
+      {id:"p1d2-C1",name:"C1 — BACK FINISHER",type:"straight",exercises:[
+        {id:"p1d2-C1a",name:"Straight Arm Cable Pulldown",sets:3,repsScheme:["15","12","10"],tempo:"2/1/X/1",
+         cue:"Arms straight throughout. Feel the long head of the lat. 1-sec squeeze at hip. Load climbs. Final set double drop — full lat burnout."},
+      ]},
+      {id:"p1d2-C2",name:"C2 — BICEP BURNOUT",type:"straight",exercises:[
+        {id:"p1d2-C2a",name:"DB Hammer Curl",sets:3,repsScheme:["12","12","10"],tempo:"2/0/1/1",
+         cue:"Neutral grip. 1-sec squeeze at top. No swing — anchor upper arm. Weight climbs. Final set: strip 20%, 15 reps. Brachialis development."},
+      ]},
+    ],
+  },
 
-  // ── PHASE 3 ─────────────────────────────────────────────────────────────────
-  3: [
-    {
-      id:"p3d1",day:"01",label:"PUSH A",sub:"Barbell Squat · Chest · Tricep",color:"#7EB8D4",
-      series:[
-        {id:"p3d1a",name:"BARBELL WORK",type:"straight",exercises:[
-          {id:"p3d1a1",name:"Barbell Back Squat",sets:5,repsScheme:["5","5","5","5","5"],tempo:"3/1/X/0",cue:"CONTROLLED Valsalva only. Brace, descend, drive. Build weight slowly over weeks."},
-        ]},
-        {id:"p3d1b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p3d1b1",name:"Hack Squat — Medium Stance",sets:3,repsScheme:["10","10","10"],tempo:"2/0/X/0",cue:"Follow barbell squat with machine volume. Quad pump."},
-          {id:"p3d1b2",name:"Single Leg Lying Leg Curl",sets:3,repsScheme:["10","10","10"],tempo:"3/1/X/1",cue:"Full hamstring development. 1-sec squeeze at top."},
-        ]},
-        {id:"p3d1c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p3d1c1",name:"Barbell Bench Press",sets:4,repsScheme:["6","6","6","6"],tempo:"3/1/X/0",cue:"Controlled descent. 1-sec pause at chest. Drive."},
-          {id:"p3d1c2",name:"Cable Tricep Pushdown — Rope",sets:4,repsScheme:["12","12","12","12"],tempo:"2/0/1/1",cue:"Split rope at bottom. Squeeze 1 sec."},
-        ]},
-      ],
-    },
-    {
-      id:"p3d2",day:"02",label:"PULL A",sub:"Deadlift · Back · Bicep",color:"#7EB8D4",
-      series:[
-        {id:"p3d2a",name:"BARBELL WORK",type:"straight",exercises:[
-          {id:"p3d2a1",name:"Barbell Romanian Deadlift",sets:4,repsScheme:["6","6","6","6"],tempo:"3/1/X/0",cue:"Hip hinge. 1-sec stretch pause. Build to conventional deadlift over 4 weeks."},
-        ]},
-        {id:"p3d2b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p3d2b1",name:"Weighted Pull-Up or Lat Pulldown",sets:4,repsScheme:["8","8","8","8"],tempo:"2/0/X/0",cue:"Add weight to pull-ups if bodyweight is easy."},
-          {id:"p3d2b2",name:"Single Arm DB Row",sets:4,repsScheme:["10","10","10","10"],tempo:"3/1/X/0",cue:"Full ROM. 1-sec pause at top contraction."},
-        ]},
-        {id:"p3d2c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p3d2c1",name:"EZ Bar Curl",sets:4,repsScheme:["10","10","10","10"],tempo:"2/0/1/1",cue:"Supinate at top. 1-sec squeeze. 3-sec eccentric."},
-          {id:"p3d2c2",name:"Face Pull",sets:3,repsScheme:["15","15","15"],tempo:"2/0/1/1",cue:"Elbows high. Rotator cuff integrity."},
-        ]},
-      ],
-    },
-    {
-      id:"p3d3",day:"03",label:"ATHLETIC",sub:"Run Intervals · Movement Work",color:"#58A45C",
-      series:[
-        {id:"p3d3a",name:"MOVEMENT PREP",type:"straight",exercises:[
-          {id:"p3d3a1",name:"Hip 90/90 + Thoracic Rotation",sets:2,repsScheme:["60s","60s"],tempo:"—",cue:"Combined mobility circuit. Each side."},
-          {id:"p3d3a2",name:"Single Leg RDL — Bodyweight",sets:3,repsScheme:["8","8","8"],tempo:"—",cue:"Each leg. Balance and posterior chain."},
-          {id:"p3d3a3",name:"Lateral Band Walk",sets:2,repsScheme:["20","20"],tempo:"—",cue:"Glute medius — running mechanics prep."},
-        ]},
-        {id:"p3d3b",name:"RUN INTERVALS",type:"straight",exercises:[
-          {id:"p3d3b1",name:"Walk/Jog Intervals",sets:6,repsScheme:["2 min jog","2 min jog","2 min jog","2 min jog","2 min jog","2 min jog"],tempo:"—",cue:"2 min easy jog / 2 min walk. HR must drop below 120 in walk. Stop if chest pressure."},
-        ]},
-        {id:"p3d3c",name:"ZONE 2 CARDIO",type:"straight",exercises:[
-          {id:"p3d3c1",name:"Easy Bike / Walk Cooldown",sets:1,repsScheme:["15–20 min"],tempo:"—",cue:"HR 100–115. Full cooldown after intervals."},
-        ]},
-      ],
-    },
-    {
-      id:"p3d4",day:"04",label:"PUSH B",sub:"Overhead · Quad · Tricep",color:"#7EB8D4",
-      series:[
-        {id:"p3d4a",name:"BARBELL WORK",type:"straight",exercises:[
-          {id:"p3d4a1",name:"Barbell Overhead Press",sets:4,repsScheme:["6","6","6","6"],tempo:"2/1/X/0",cue:"Standing or seated. Brace core. Drive bar overhead. Monitor HR."},
-        ]},
-        {id:"p3d4b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p3d4b1",name:"Front Foot Elevated Split Squat",sets:4,repsScheme:["8","8","8","8"],tempo:"3/1/X/0",cue:"Add weight from Phase 2. Deeper stretch."},
-          {id:"p3d4b2",name:"Cable Lateral Raise",sets:4,repsScheme:["15","15","15","15"],tempo:"2/0/1/0",cue:"Constant tension. 1-sec hold at peak."},
-        ]},
-        {id:"p3d4c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p3d4c1",name:"Goblet Squat — Heavier",sets:3,repsScheme:["10","10","10"],tempo:"3/1/X/0",cue:"Increase weight from Phase 2. Same form."},
-          {id:"p3d4c2",name:"Skull Crusher — EZ Bar",sets:3,repsScheme:["10","10","10"],tempo:"3/0/X/0",cue:"Long head priority. Slow eccentric."},
-        ]},
-      ],
-    },
-    {
-      id:"p3d5",day:"05",label:"PULL B",sub:"Back Width · Hinge · Conditioning",color:"#7EB8D4",
-      series:[
-        {id:"p3d5a",name:"A SERIES",type:"straight",exercises:[
-          {id:"p3d5a1",name:"Weighted Pull-Up",sets:5,repsScheme:["6","6","6","6","6"],tempo:"2/0/X/1",cue:"Add belt weight. Full ROM. 1-sec squeeze at top."},
-        ]},
-        {id:"p3d5b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p3d5b1",name:"Barbell RDL — Building to Conventional",sets:4,repsScheme:["8","8","8","8"],tempo:"3/1/X/0",cue:"Progress hip hinge pattern toward full deadlift."},
-          {id:"p3d5b2",name:"Seated Calf Raise",sets:4,repsScheme:["15","15","15","15"],tempo:"2/2/X/1",cue:"2-sec stretch pause. Running prep."},
-        ]},
-        {id:"p3d5c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p3d5c1",name:"Incline DB Curl",sets:3,repsScheme:["10","10","10"],tempo:"3/0/1/1",cue:"Long head stretch. Add weight from Phase 2."},
-          {id:"p3d5c2",name:"Farmer's Carry — Heavier",sets:4,repsScheme:["40m","40m","40m","40m"],tempo:"—",cue:"Increase load. Grip and gait conditioning."},
-        ]},
-      ],
-    },
-  ],
+  // DAY 3 — ATHLETIC
+  {
+    id:"p1d3",day:"03",label:"ATHLETIC",sub:"Remedial Movement · Zone 2",color:"#58A45C",
+    series:[
+      {id:"p1d3-M",name:"MOVEMENT PREP",type:"straight",exercises:[
+        {id:"p1d3-M1",name:"Hip 90/90 Stretch",sets:3,repsScheme:["60s","60s","60s"],tempo:"—",cue:"Each side. Anterior and posterior tilt. Hip capsule mobility — the base of every lower body movement."},
+        {id:"p1d3-M2",name:"Thoracic Rotation — Quadruped",sets:3,repsScheme:["10","10","10"],tempo:"—",cue:"Each side. Follow your hand with your eyes. Open ceiling. This is your pressing strength foundation."},
+        {id:"p1d3-M3",name:"Single Leg Balance",sets:3,repsScheme:["30s","30s","30s"],tempo:"—",cue:"Each leg. Eyes open. When solid, close eyes. Proprioception rebuilding — essential for running return."},
+        {id:"p1d3-M4",name:"Lateral Band Walk",sets:3,repsScheme:["15","15","15"],tempo:"—",cue:"Each direction. Glute medius activation — the hip stabiliser that prevents knee collapse under load."},
+        {id:"p1d3-M5",name:"Dead Hang",sets:3,repsScheme:["20s","25s","30s"],tempo:"—",cue:"Progressive duration. Shoulder decompression and grip. Build toward 45 sec over the phase."},
+      ]},
+      {id:"p1d3-Z",name:"ZONE 2",type:"straight",exercises:[
+        {id:"p1d3-Z1",name:"Stationary Bike or Easy Walk",sets:1,repsScheme:["30–35 min"],tempo:"—",cue:"HR 100–115 BPM. Fully conversational — you should be able to say a full sentence without pausing. This is medicine, not punishment."},
+      ]},
+    ],
+  },
 
-  // ── PHASE 4 ─────────────────────────────────────────────────────────────────
-  4: [
-    {
-      id:"p4d1",day:"01",label:"PUSH A",sub:"Max Strength · Quad · Chest",color:"#58A45C",
-      series:[
-        {id:"p4d1a",name:"BARBELL WORK",type:"straight",exercises:[
-          {id:"p4d1a1",name:"Barbell Back Squat — Heavy",sets:5,repsScheme:["5","3","3","3","3"],tempo:"3/1/X/0",cue:"Progressive overload. Add 5 lbs per session when possible. This is your long-term strength base."},
-        ]},
-        {id:"p4d1b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p4d1b1",name:"Hack Squat — Volume",sets:4,repsScheme:["10","10","10","10"],tempo:"2/0/X/0",cue:"After heavy squats. Quad pump and volume work."},
-          {id:"p4d1b2",name:"Single Leg Curl — Heavy",sets:4,repsScheme:["8","8","8","8"],tempo:"4/1/X/1",cue:"Maximum hamstring development. Heaviest yet."},
-        ]},
-        {id:"p4d1c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p4d1c1",name:"Barbell Bench Press — Heavy",sets:4,repsScheme:["5","5","5","5"],tempo:"3/1/X/0",cue:"Controlled. 1-sec pause at chest. Progressive load."},
-          {id:"p4d1c2",name:"Weighted Dips",sets:3,repsScheme:["10","10","10"],tempo:"3/0/X/0",cue:"If cleared. Upright torso for chest emphasis."},
-        ]},
-      ],
-    },
-    {
-      id:"p4d2",day:"02",label:"PULL A",sub:"Conventional Deadlift · Back · Bicep",color:"#58A45C",
-      series:[
-        {id:"p4d2a",name:"BARBELL WORK",type:"straight",exercises:[
-          {id:"p4d2a1",name:"Conventional Deadlift",sets:4,repsScheme:["4","4","4","4"],tempo:"3/0/X/0",cue:"The lift is back. Full hip extension. Lock out completely. Progressive overload every 1–2 weeks."},
-        ]},
-        {id:"p4d2b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p4d2b1",name:"Weighted Pull-Up",sets:4,repsScheme:["6","6","6","6"],tempo:"2/0/X/1",cue:"Full ROM. 1-sec squeeze. Add weight progressively."},
-          {id:"p4d2b2",name:"Barbell Row — Pendlay Style",sets:4,repsScheme:["6","6","6","6"],tempo:"3/1/X/0",cue:"Bar to floor each rep. Explosive pull. Full back development."},
-        ]},
-        {id:"p4d2c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p4d2c1",name:"Barbell Curl",sets:4,repsScheme:["8","8","8","8"],tempo:"2/0/1/1",cue:"Heavy bicep work. Supinate. 1-sec squeeze at top."},
-          {id:"p4d2c2",name:"Face Pull — Heavy",sets:3,repsScheme:["15","15","15"],tempo:"2/0/1/1",cue:"Shoulder health maintained as loads increase."},
-        ]},
-      ],
-    },
-    {
-      id:"p4d3",day:"03",label:"ATHLETIC",sub:"Run Protocol · Performance",color:"#58A45C",
-      series:[
-        {id:"p4d3a",name:"MOVEMENT PREP",type:"straight",exercises:[
-          {id:"p4d3a1",name:"Dynamic Warm-Up Circuit",sets:1,repsScheme:["10 min"],tempo:"—",cue:"Leg swings, hip circles, A-skips, high knees. Running prep."},
-        ]},
-        {id:"p4d3b",name:"RUN INTERVALS",type:"straight",exercises:[
-          {id:"p4d3b1",name:"Structured Run — Zone 3/4 Intervals",sets:5,repsScheme:["4 min run","4 min run","4 min run","4 min run","4 min run"],tempo:"—",cue:"4 min at moderate effort / 2 min walk. HR up to 155. This is ultra runner territory returning."},
-        ]},
-        {id:"p4d3c",name:"ZONE 2 CARDIO",type:"straight",exercises:[
-          {id:"p4d3c1",name:"Easy Run or Bike Cooldown",sets:1,repsScheme:["20 min"],tempo:"—",cue:"Bring HR back down. Conversational pace. Enjoy it."},
-        ]},
-      ],
-    },
-    {
-      id:"p4d4",day:"04",label:"PUSH B",sub:"Overhead Strength · Athletic",color:"#58A45C",
-      series:[
-        {id:"p4d4a",name:"BARBELL WORK",type:"straight",exercises:[
-          {id:"p4d4a1",name:"Barbell Overhead Press — Heavy",sets:5,repsScheme:["5","3","3","3","3"],tempo:"2/1/X/0",cue:"Standing. Full body tension. Progressive overload. The athletic press."},
-        ]},
-        {id:"p4d4b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p4d4b1",name:"Bulgarian Split Squat — Weighted",sets:4,repsScheme:["8","8","8","8"],tempo:"3/1/X/0",cue:"DB or barbell. Maximum unilateral strength. Athletic carry-over."},
-          {id:"p4d4b2",name:"Cable Lateral Raise — Heavy",sets:4,repsScheme:["12","12","12","12"],tempo:"2/0/1/0",cue:"Capped delt development. CBum aesthetic maintained."},
-        ]},
-        {id:"p4d4c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p4d4c1",name:"Dumbbell Incline Press",sets:3,repsScheme:["10","10","10"],tempo:"3/0/X/0",cue:"Upper chest. Heavier than Phase 2. Same execution."},
-          {id:"p4d4c2",name:"Overhead Tricep Extension — Cable",sets:3,repsScheme:["12","12","12"],tempo:"3/0/X/0",cue:"Long head. Heavy but controlled."},
-        ]},
-      ],
-    },
-    {
-      id:"p4d5",day:"05",label:"PULL B",sub:"Back Width · Hinge · Full Athletic",color:"#58A45C",
-      series:[
-        {id:"p4d5a",name:"BARBELL WORK",type:"straight",exercises:[
-          {id:"p4d5a1",name:"Trap Bar Deadlift or Sumo Deadlift",sets:4,repsScheme:["5","5","5","5"],tempo:"3/0/X/0",cue:"Variation for longevity. Trap bar reduces spinal shear. This is the forever lift."},
-        ]},
-        {id:"p4d5b",name:"B1/B2 SERIES",type:"superset",exercises:[
-          {id:"p4d5b1",name:"Weighted Pull-Up — Max Effort",sets:4,repsScheme:["5","5","5","5"],tempo:"2/0/X/1",cue:"Heaviest weighted pull-up work. Peak back width."},
-          {id:"p4d5b2",name:"Standing Calf Raise — Heavy",sets:4,repsScheme:["12","12","12","12"],tempo:"2/2/X/1",cue:"Gastroc focus. Running performance."},
-        ]},
-        {id:"p4d5c",name:"C1/C2 SERIES",type:"superset",exercises:[
-          {id:"p4d5c1",name:"Hammer Curl — Heavy",sets:3,repsScheme:["10","10","10"],tempo:"2/0/1/1",cue:"Brachialis. Arm thickness. Progressive."},
-          {id:"p4d5c2",name:"Farmer's Carry — Max Load",sets:4,repsScheme:["40m","40m","40m","40m"],tempo:"—",cue:"Heaviest carry yet. The ultra runner's finisher."},
-        ]},
-      ],
-    },
-  ],
-};
+  // DAY 4 — PUSH B
+  {
+    id:"p1d4",day:"04",label:"PUSH B",sub:"Shoulder · Quad Finisher · Tricep Burnout",color:"#E87B6E",
+    series:[
+      {id:"p1d4-A",name:"A SERIES",type:"straight",exercises:[
+        {id:"p1d4-A1",name:"Seated DB Shoulder Press",sets:4,repsScheme:["12","10","10","8"],tempo:"2/0/X/0",
+         cue:"Seated keeps HR lower. Don't lock out at top — keep delt under tension. Weight climbs every set. Drop on final 8."},
+      ]},
+      {id:"p1d4-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p1d4-B1",name:"Cable Lateral Raise",sets:3,repsScheme:["15","15","12"],tempo:"2/0/1/0",
+         cue:"Cable keeps constant tension unlike DB. Lead with elbow. 1-sec hold at peak. Final set heavier — drop follows."},
+        {id:"p1d4-B2",name:"Rope Face Pull",sets:3,repsScheme:["15","15","15"],tempo:"2/0/1/1",
+         cue:"Elbows high above wrists. Pull to ears. 1-sec external rotation squeeze. Rotator cuff health — non-negotiable with your history."},
+      ]},
+      {id:"p1d4-C1",name:"C1 — QUAD FINISHER",type:"straight",exercises:[
+        {id:"p1d4-C1a",name:"Goblet Squat — Paused",sets:3,repsScheme:["12","10","8"],tempo:"3/2/X/0",
+         cue:"2-sec pause in the hole every rep. No bouncing — absorb tension. Drive knees out. Weight climbs. Final set double drop — 2 strips, failure each time. This is your only quad work today. Make it count."},
+      ]},
+      {id:"p1d4-C2",name:"C2 — TRICEP BURNOUT",type:"straight",exercises:[
+        {id:"p1d4-C2a",name:"Overhead DB Tricep Extension",sets:3,repsScheme:["12","10","8"],tempo:"3/0/1/0",
+         cue:"Both hands on single DB. Arms overhead — long head fully stretched. 3-sec eccentric. Weight climbs. Final set: strip 20% twice. Long head pre-fatigued from pressing — this finishes it."},
+      ]},
+    ],
+  },
+
+  // DAY 5 — PULL B
+  {
+    id:"p1d5",day:"05",label:"PULL B",sub:"Back Width · Hip Hinge · Bicep",color:"#E87B6E",
+    series:[
+      {id:"p1d5-A",name:"A SERIES",type:"straight",exercises:[
+        {id:"p1d5-A1",name:"Assisted Pull-Up or Band Pulldown",sets:4,repsScheme:["8","8","8","8"],tempo:"2/0/X/1",
+         cue:"Full ROM — dead hang at bottom, chin over bar at top. 1-sec squeeze. If assisted, reduce assistance each set. Final set drops."},
+      ]},
+      {id:"p1d5-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p1d5-B1",name:"Romanian Deadlift — Dumbbell",sets:3,repsScheme:["12","10","10"],tempo:"3/1/X/0",
+         cue:"Hip hinge — push hips back, not down. 1-sec stretch pause at max hamstring length. Drive hips forward on the way up. Weight builds."},
+        {id:"p1d5-B2",name:"Seated Calf Raise",sets:3,repsScheme:["15","15","12"],tempo:"2/2/X/1",
+         cue:"2-sec pause at full stretch — feel the soleus load. Explosive drive. 1-sec squeeze at top. Final set heavier with drop."},
+      ]},
+      {id:"p1d5-C1",name:"C1 — BACK FINISHER",type:"straight",exercises:[
+        {id:"p1d5-C1a",name:"Single Arm DB Row",sets:3,repsScheme:["12","10","8"],tempo:"3/1/X/0",
+         cue:"Full ROM — let arm hang to feel lat stretch. Drive elbow up and back. 1-sec squeeze. Weight climbs. Final set double drop."},
+      ]},
+      {id:"p1d5-C2",name:"C2 — BICEP BURNOUT",type:"straight",exercises:[
+        {id:"p1d5-C2a",name:"Incline DB Curl",sets:3,repsScheme:["12","10","8"],tempo:"3/0/1/1",
+         cue:"45° incline — long head on stretch from the start. No swing — gravity is doing your setup. 1-sec squeeze at top. Weight climbs. Final drop set."},
+      ]},
+    ],
+  },
+],
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 2 — BUILD
+// ══════════════════════════════════════════════════════════════════════════════
+2: [
+  // DAY 1 — PUSH A
+  {
+    id:"p2d1",day:"01",label:"PUSH A",sub:"Hack Squat Wave · Chest · Tricep",color:"#C9A84C",
+    series:[
+      {id:"p2d1-A",name:"A SERIES",type:"straight",exercises:[
+        {id:"p2d1-A1",name:"Hack Squat — Medium Stance",sets:6,repsScheme:["8","6","8","6","6","8"],tempo:"2/0/X/0",
+         cue:"Feet low and narrow — maximises quad bias. Full depth — hips below parallel. Monitor HR. Wave: build on 6s, back off slightly on 8s. Drops on all 6-rep sets, double drop on final 6."},
+      ]},
+      {id:"p2d1-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p2d1-B1",name:"Front Foot Elevated DB Split Squat",sets:4,repsScheme:["8","8","8","6"],tempo:"3/1/X/0",
+         cue:"Front foot elevated 2-4 inches — increases depth and stretch. 1-sec pause in hole. Upright torso. Final set 6 reps, max load — drop unlocks."},
+        {id:"p2d1-B2",name:"Single Leg Lying Leg Curl",sets:4,repsScheme:["10","10","10","8"],tempo:"4/1/X/1",
+         cue:"4-sec eccentric — feel the hamstring load under tension. 1-sec squeeze at top contraction. Final set 8 reps max load, drop follows."},
+      ]},
+      {id:"p2d1-C1",name:"C1 — CHEST FINISHER",type:"straight",exercises:[
+        {id:"p2d1-C1a",name:"Incline DB Press",sets:4,repsScheme:["12","10","10","8"],tempo:"3/0/X/0",
+         cue:"30-45° incline — upper chest emphasis. Drive elbows together at top. Weight climbs across 4 sets. Final 8-rep set: double drop immediately after. Pre-fatigued from hack squat HR spike — keep controlled."},
+      ]},
+      {id:"p2d1-C2",name:"C2 — TRICEP BURNOUT",type:"straight",exercises:[
+        {id:"p2d1-C2a",name:"Cable Tricep Pushdown — Rope",sets:4,repsScheme:["15","12","10","8"],tempo:"2/0/1/1",
+         cue:"Split rope at bottom — lateral head spread. 1-sec squeeze. Weight climbs all 4 sets. Final 8 rep set: strip 25% twice to failure. Triceps are already pre-exhausted from pressing — this is the finishing blow."},
+      ]},
+    ],
+  },
+
+  // DAY 2 — PULL A
+  {
+    id:"p2d2",day:"02",label:"PULL A",sub:"Lat Pulldown Wave · Back Thickness · Bicep",color:"#C9A84C",
+    series:[
+      {id:"p2d2-A",name:"A SERIES",type:"straight",exercises:[
+        {id:"p2d2-A1",name:"Single Arm Supinated Lat Pulldown",sets:6,repsScheme:["8","6","8","6","6","8"],tempo:"2/0/X/1",
+         cue:"Supinated grip = lat-bicep tie-in. Full stretch at top — arm straight overhead. Drive elbow down to hip. 1-sec squeeze. Wave load. Drops on 6-rep sets, double drop on final 6."},
+      ]},
+      {id:"p2d2-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p2d2-B1",name:"Chest Supported T-Bar Row — Neutral Grip",sets:4,repsScheme:["8","8","8","6"],tempo:"3/1/X/0",
+         cue:"Chest on pad removes low back. 1-sec pause at full stretch — feel mid-back and rhomboids load. Drive elbows back. Final 6 reps max load — drop follows."},
+        {id:"p2d2-B2",name:"Single Arm DB Lateral Raise",sets:4,repsScheme:["15","15","12","10"],tempo:"2/0/1/0",
+         cue:"Stand sideways, brace free hand on cable tower. Lead elbow up. 1-sec hold at peak. Weight builds. Final 10-rep set: drop 20%, 15 to failure."},
+      ]},
+      {id:"p2d2-C1",name:"C1 — BACK FINISHER",type:"straight",exercises:[
+        {id:"p2d2-C1a",name:"Straight Arm Cable Pulldown",sets:4,repsScheme:["15","12","10","8"],tempo:"2/1/X/1",
+         cue:"Arms straight throughout. Hinge from shoulder only. 1-sec squeeze at hip. Weight climbs. Final 8: double drop immediately. Lats on fire at this point — this is where the work gets done."},
+      ]},
+      {id:"p2d2-C2",name:"C2 — BICEP BURNOUT",type:"straight",exercises:[
+        {id:"p2d2-C2a",name:"Low Cable D-Handle Curl — Sideways",sets:4,repsScheme:["12","10","10","8"],tempo:"3/0/1/1",
+         cue:"Stand sideways to cable. Long head emphasis — peak contraction. 1-sec squeeze. Weight climbs. Final 8: strip 20% twice. Biceps already pre-fatigued from pulldown supination."},
+      ]},
+    ],
+  },
+
+  // DAY 3 — ATHLETIC
+  {
+    id:"p2d3",day:"03",label:"ATHLETIC",sub:"Remedial Movement · Zone 2",color:"#58A45C",
+    series:[
+      {id:"p2d3-M",name:"MOVEMENT PREP",type:"straight",exercises:[
+        {id:"p2d3-M1",name:"Hip 90/90 Stretch",sets:3,repsScheme:["60s","60s","60s"],tempo:"—",cue:"Each side. Active hip rotation. Push into end range each set."},
+        {id:"p2d3-M2",name:"Thoracic Rotation — Quadruped",sets:3,repsScheme:["10","10","10"],tempo:"—",cue:"Each side. Stack shoulder over shoulder at top. Pressing performance lives here."},
+        {id:"p2d3-M3",name:"Single Leg Balance Reach",sets:3,repsScheme:["10","10","10"],tempo:"—",cue:"Each leg. Reach opposite hand toward floor. Proprioception and hip hinge pattern together."},
+        {id:"p2d3-M4",name:"Lateral Band Walk",sets:3,repsScheme:["20","20","20"],tempo:"—",cue:"Each direction. Resistance band above knees. Hip abductor activation — glute medius is your knee's bodyguard."},
+        {id:"p2d3-M5",name:"Dead Hang",sets:3,repsScheme:["30s","35s","40s"],tempo:"—",cue:"Progressive duration. Shoulder decompression. Grip strength. Building toward Phase 3 pull-up work."},
+      ]},
+      {id:"p2d3-Z",name:"ZONE 2",type:"straight",exercises:[
+        {id:"p2d3-Z1",name:"Stationary Bike / Incline Walk",sets:1,repsScheme:["40–45 min"],tempo:"—",cue:"HR 105–120 BPM. Nasal breathing where possible. If you have to open your mouth to breathe hard, slow down."},
+      ]},
+      {id:"p2d3-F",name:"FINISHER",type:"straight",exercises:[
+        {id:"p2d3-F1",name:"Farmer's Carry",sets:4,repsScheme:["40m","40m","40m","40m"],tempo:"—",cue:"Moderate DBs — challenging grip but controlled gait. Tall spine, shoulders packed. This is loaded carry for the ultra runner — grip, core, gait."},
+      ]},
+    ],
+  },
+
+  // DAY 4 — PUSH B
+  {
+    id:"p2d4",day:"04",label:"PUSH B",sub:"Shoulder Wave · Quad Finisher · Tricep Burnout",color:"#C9A84C",
+    series:[
+      {id:"p2d4-A",name:"A SERIES",type:"straight",exercises:[
+        {id:"p2d4-A1",name:"Seated DB Shoulder Press",sets:6,repsScheme:["8","6","8","6","6","8"],tempo:"2/0/X/0",
+         cue:"Seated = lower HR ceiling. Don't lock out — keep delt under tension. Wave load: build on 6s, manage HR on 8s. Drops on 6-rep sets, double drop on final 6."},
+      ]},
+      {id:"p2d4-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p2d4-B1",name:"Cable Lateral Raise",sets:4,repsScheme:["15","15","12","10"],tempo:"2/0/1/0",
+         cue:"Cable constant tension unlike DB. Lead elbow. 1-sec hold at peak. Weight builds. Final 10: drop immediately, 15 to failure. Medial delt is everything for width."},
+        {id:"p2d4-B2",name:"Rope Face Pull",sets:4,repsScheme:["15","15","15","15"],tempo:"2/0/1/1",
+         cue:"Elbows high and wide. Pull to ears. External rotation at the end — this is the movement that keeps your shoulders healthy forever. 1-sec squeeze. Drop on final set."},
+      ]},
+      {id:"p2d4-C1",name:"C1 — QUAD FINISHER",type:"straight",exercises:[
+        {id:"p2d4-C1a",name:"Goblet Squat — Paused",sets:4,repsScheme:["12","10","8","6"],tempo:"3/2/X/0",
+         cue:"2-sec pause in hole every rep — no bouncing, no momentum. Weight climbs all 4 sets. Final 6: double drop immediately — strip twice, failure each time. This is your only compound quad work today. It earns its name as a finisher."},
+      ]},
+      {id:"p2d4-C2",name:"C2 — TRICEP BURNOUT",type:"straight",exercises:[
+        {id:"p2d4-C2a",name:"Overhead Cable Tricep Extension",sets:4,repsScheme:["12","10","10","8"],tempo:"3/0/1/1",
+         cue:"Face away from cable. Arms overhead — long head fully stretched. 1-sec squeeze at extension. Weight climbs. Final 8: strip 25% twice to failure. Long head pre-fatigued from pressing — this finishes what the shoulder press started."},
+      ]},
+    ],
+  },
+
+  // DAY 5 — PULL B
+  {
+    id:"p2d5",day:"05",label:"PULL B",sub:"Pull-Up Wave · Hip Hinge · Bicep",color:"#C9A84C",
+    series:[
+      {id:"p2d5-A",name:"A SERIES",type:"straight",exercises:[
+        {id:"p2d5-A1",name:"Lat Pulldown — Wide Overhand",sets:6,repsScheme:["8","6","8","6","6","8"],tempo:"2/0/X/1",
+         cue:"Wide grip = maximum lat width. Full stretch overhead. Drive elbows down to pockets. 1-sec squeeze. Wave load. Drops on all 6-rep sets — building toward pull-ups in Phase 3."},
+      ]},
+      {id:"p2d5-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p2d5-B1",name:"Romanian Deadlift — Dumbbell",sets:4,repsScheme:["10","10","8","8"],tempo:"3/1/X/0",
+         cue:"Push hips back — hinge, don't squat. 1-sec pause at max hamstring stretch. Feel the pull from glute-ham tie-in. Weight builds. Drop on final 8."},
+        {id:"p2d5-B2",name:"Seated Calf Raise",sets:4,repsScheme:["15","15","12","10"],tempo:"2/2/X/1",
+         cue:"2-sec pause at full stretch — soleus bias. Explosive drive. Weight climbs. Final 10: drop immediately, 15 to failure. Calf development for the return to running."},
+      ]},
+      {id:"p2d5-C1",name:"C1 — BACK FINISHER",type:"straight",exercises:[
+        {id:"p2d5-C1a",name:"Bent Over Supinated DB Curl-Row",sets:4,repsScheme:["12","10","10","8"],tempo:"2/1/X/1",
+         cue:"Bent 45°, brace on knee. Supinated grip — row the DB up. Lat and bicep work simultaneously. 1-sec squeeze at top. Weight climbs. Final 8: double drop."},
+      ]},
+      {id:"p2d5-C2",name:"C2 — BICEP BURNOUT",type:"straight",exercises:[
+        {id:"p2d5-C2a",name:"EZ Bar Skull Crusher",sets:4,repsScheme:["12","10","10","8"],tempo:"3/0/X/0",
+         cue:"Lower toward forehead — 3-sec eccentric. Feel the long head stretch. Explosive press. Weight climbs. Final 8: strip 20% twice to failure. Tricep isolation at the end of a pull day — the pump is brutal."},
+      ]},
+    ],
+  },
+],
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 3 — STRENGTHEN
+// ══════════════════════════════════════════════════════════════════════════════
+3: [
+  // DAY 1 — PUSH A
+  {
+    id:"p3d1",day:"01",label:"PUSH A",sub:"Barbell Squat · Chest · Tricep",color:"#7EB8D4",
+    series:[
+      {id:"p3d1-A",name:"BARBELL WORK",type:"straight",exercises:[
+        {id:"p3d1-A1",name:"Barbell Back Squat",sets:5,repsScheme:["5","5","5","5","5"],tempo:"3/1/X/0",
+         cue:"The lift is back. Control the descent — 3 sec. 1-sec pause at bottom. Drive floor away. Brace is controlled — not maximum Valsalva. Build weight slowly across the phase. Drop sets on final set."},
+      ]},
+      {id:"p3d1-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p3d1-B1",name:"Hack Squat — Volume",sets:4,repsScheme:["10","10","8","8"],tempo:"2/0/X/0",
+         cue:"Follow barbell with machine volume. Quad pump after heavy compound. Weight builds. Final 8: drop follows immediately — legs are already cooked."},
+        {id:"p3d1-B2",name:"Single Leg Curl",sets:4,repsScheme:["10","10","8","8"],tempo:"4/1/X/1",
+         cue:"4-sec eccentric. 1-sec squeeze. Each leg in turn. Final set drop — hamstrings need the volume to balance squat-dominant days."},
+      ]},
+      {id:"p3d1-C1",name:"C1 — CHEST FINISHER",type:"straight",exercises:[
+        {id:"p3d1-C1a",name:"Barbell Bench Press",sets:4,repsScheme:["8","6","6","6"],tempo:"3/1/X/0",
+         cue:"1-sec pause at chest — removes bounce, forces control. Drive bar and spread the floor. Weight climbs. Double drop on all 6-rep sets. Chest is fresh — these are your only horizontal press sets."},
+      ]},
+      {id:"p3d1-C2",name:"C2 — TRICEP BURNOUT",type:"straight",exercises:[
+        {id:"p3d1-C2a",name:"Cable Pushdown → Overhead Extension Superset",sets:4,repsScheme:["10","10","8","8"],tempo:"2/0/1/0",
+         cue:"10 reps pushdown (lateral head), immediately grab rope overhead — 10 reps (long head). Zero rest between. This is a mechanical drop set — same weight, different angle. Final set: traditional drop after both movements."},
+      ]},
+    ],
+  },
+
+  // DAY 2 — PULL A
+  {
+    id:"p3d2",day:"02",label:"PULL A",sub:"Weighted Pull-Up · Deadlift Build · Bicep",color:"#7EB8D4",
+    series:[
+      {id:"p3d2-A",name:"BARBELL WORK",type:"straight",exercises:[
+        {id:"p3d2-A1",name:"Barbell Romanian Deadlift",sets:4,repsScheme:["6","6","6","6"],tempo:"3/1/X/0",
+         cue:"Hip hinge pattern building toward conventional deadlift. 1-sec pause at max stretch — feel hamstring load at the bottom. Drive hips forward aggressively. Double drop on all sets — this is the hip hinge foundation."},
+      ]},
+      {id:"p3d2-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p3d2-B1",name:"Weighted Pull-Up",sets:4,repsScheme:["8","6","6","6"],tempo:"2/0/X/1",
+         cue:"Add weight — belt or DB between feet. Full dead hang at bottom. 1-sec squeeze at top. Weight climbs. Drop on 6-rep sets — remove weight plate, continue with bodyweight."},
+        {id:"p3d2-B2",name:"Single Arm DB Row",sets:4,repsScheme:["10","10","8","8"],tempo:"3/1/X/0",
+         cue:"Full ROM — arm hangs to feel lat stretch. Drive elbow up. 1-sec pause at top. Weight climbs. Final 8: drop follows."},
+      ]},
+      {id:"p3d2-C1",name:"C1 — BACK FINISHER",type:"straight",exercises:[
+        {id:"p3d2-C1a",name:"Chest Supported DB Row — Pronated",sets:4,repsScheme:["12","10","10","8"],tempo:"3/1/X/1",
+         cue:"Pronated grip shifts emphasis to upper traps and rear delt. 1-sec pause at stretch, 1-sec squeeze at top. Weight climbs. Final 8: double drop — maximum mid-back volume."},
+      ]},
+      {id:"p3d2-C2",name:"C2 — BICEP BURNOUT",type:"straight",exercises:[
+        {id:"p3d2-C2a",name:"EZ Bar Curl",sets:4,repsScheme:["10","10","8","8"],tempo:"2/0/1/1",
+         cue:"EZ bar reduces wrist stress. Supinate aggressively at top. 1-sec squeeze. Weight climbs. Final 8: strip twice. Biceps pre-fatigued from pull-up supination — this completes the damage."},
+      ]},
+    ],
+  },
+
+  // DAY 3 — ATHLETIC
+  {
+    id:"p3d3",day:"03",label:"ATHLETIC",sub:"Run Intervals · Movement Work",color:"#58A45C",
+    series:[
+      {id:"p3d3-M",name:"MOVEMENT PREP",type:"straight",exercises:[
+        {id:"p3d3-M1",name:"Dynamic Warm-Up Circuit",sets:1,repsScheme:["10 min"],tempo:"—",cue:"Leg swings (forward and lateral), hip circles, ankle circles, A-skips, high knees. Running mechanics prep — the drill work you haven't done in months."},
+        {id:"p3d3-M2",name:"Single Leg RDL — Bodyweight",sets:3,repsScheme:["8","8","8"],tempo:"—",cue:"Each leg. Hip hinge on one leg. Balance and posterior chain. This is running gait in slow motion."},
+        {id:"p3d3-M3",name:"Lateral Band Walk",sets:2,repsScheme:["20","20"],tempo:"—",cue:"Glute medius activation — the muscle that prevents lateral knee collapse during the run gait cycle."},
+      ]},
+      {id:"p3d3-R",name:"RUN INTERVALS",type:"straight",exercises:[
+        {id:"p3d3-R1",name:"Walk / Jog Intervals",sets:6,repsScheme:["2 min","2 min","2 min","2 min","2 min","2 min"],tempo:"—",cue:"2 min easy jog / 2 min walk recovery. HR must drop below 120 BPM in the walk. Stop immediately if chest pressure, dizziness, or jaw/arm pain. This is the ultra runner waking up."},
+      ]},
+      {id:"p3d3-Z",name:"ZONE 2",type:"straight",exercises:[
+        {id:"p3d3-Z1",name:"Easy Bike or Walk Cooldown",sets:1,repsScheme:["15–20 min"],tempo:"—",cue:"HR 100–115. Full cooldown after intervals. Let the heart come back down properly before leaving."},
+      ]},
+    ],
+  },
+
+  // DAY 4 — PUSH B
+  {
+    id:"p3d4",day:"04",label:"PUSH B",sub:"Barbell OHP · Quad Strength · Tricep Volume",color:"#7EB8D4",
+    series:[
+      {id:"p3d4-A",name:"BARBELL WORK",type:"straight",exercises:[
+        {id:"p3d4-A1",name:"Barbell Overhead Press",sets:4,repsScheme:["6","6","6","6"],tempo:"2/1/X/0",
+         cue:"Standing or seated. Brace, drive bar overhead, finish with bar over the mid-foot. 1-sec pause at bottom keeps tension on delt. Monitor HR. Double drop on all sets."},
+      ]},
+      {id:"p3d4-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p3d4-B1",name:"Front Foot Elevated Split Squat — Loaded",sets:4,repsScheme:["8","8","6","6"],tempo:"3/1/X/0",
+         cue:"DB or goblet hold. 1-sec pause in hole. Build weight across sets. 6-rep sets are max effort — drop follows each one. Deeper stretch than Phase 2."},
+        {id:"p3d4-B2",name:"Cable Lateral Raise — Heavy",sets:4,repsScheme:["12","12","10","10"],tempo:"2/0/1/0",
+         cue:"Heaviest lateral work yet. 1-sec hold at peak every rep. Final 10: drop to 15 reps immediately."},
+      ]},
+      {id:"p3d4-C1",name:"C1 — QUAD BURNOUT",type:"straight",exercises:[
+        {id:"p3d4-C1a",name:"Leg Extension — Paused",sets:4,repsScheme:["12","10","10","8"],tempo:"2/2/1/0",
+         cue:"2-sec pause at full extension every rep — peak quad contraction. Weight climbs. Final 8: double drop immediately — two strips, failure each. Quad isolation after compound fatigue = maximum fiber recruitment."},
+      ]},
+      {id:"p3d4-C2",name:"C2 — TRICEP ANNIHILATION",type:"straight",exercises:[
+        {id:"p3d4-C2a",name:"Overhead Cable Extension + EZ Skull Crusher",sets:4,repsScheme:["10","10","8","8"],tempo:"3/0/1/0",
+         cue:"Mechanical drop set: 10 overhead cable extension (long head stretch), immediately move to bench — 10 EZ skull crushers (long head load). No rest between. Final pairing: max weight on both, then traditional drop on cable. Long head comprehensive destruction."},
+      ]},
+    ],
+  },
+
+  // DAY 5 — PULL B
+  {
+    id:"p3d5",day:"05",label:"PULL B",sub:"Pull-Up Strength · RDL Build · Conditioning",color:"#7EB8D4",
+    series:[
+      {id:"p3d5-A",name:"A SERIES",type:"straight",exercises:[
+        {id:"p3d5-A1",name:"Weighted Pull-Up",sets:5,repsScheme:["6","6","6","6","6"],tempo:"2/0/X/1",
+         cue:"Belt or DB between feet. Full dead hang. 1-sec squeeze at top. All sets heavy — this is your primary back width movement. Double drop on every set — remove weight and continue."},
+      ]},
+      {id:"p3d5-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p3d5-B1",name:"Barbell RDL — Building to Conventional",sets:4,repsScheme:["8","8","6","6"],tempo:"3/1/X/0",
+         cue:"Progressive hip hinge pattern building toward full conventional deadlift in Phase 4. 1-sec stretch pause. Increasing load across sets. Drop on 6-rep sets."},
+        {id:"p3d5-B2",name:"Seated Calf Raise — Heavier",sets:4,repsScheme:["15","12","12","10"],tempo:"2/2/X/1",
+         cue:"2-sec stretch pause. Load climbs. Final 10: drop to 15 immediately. Calf development — the overlooked component of running economy."},
+      ]},
+      {id:"p3d5-C1",name:"C1 — BACK FINISHER",type:"straight",exercises:[
+        {id:"p3d5-C1a",name:"Incline DB Curl — Supinated",sets:4,repsScheme:["12","10","10","8"],tempo:"3/0/1/1",
+         cue:"45-60° incline. Long head on stretch before movement starts. Supinate aggressively. 1-sec squeeze. Weight climbs. Final 8: double drop."},
+      ]},
+      {id:"p3d5-C2",name:"C2 — CONDITIONING FINISHER",type:"straight",exercises:[
+        {id:"p3d5-C2a",name:"Farmer's Carry — Heavier",sets:4,repsScheme:["40m","40m","40m","40m"],tempo:"—",
+         cue:"Each set heavier than Phase 2. Tall spine, packed shoulders. Grip and core under load — the ultra runner's conditioning tool. HR will rise — stay under 140 BPM."},
+      ]},
+    ],
+  },
+],
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 4 — ATHLETIC
+// ══════════════════════════════════════════════════════════════════════════════
+4: [
+  // DAY 1 — PUSH A
+  {
+    id:"p4d1",day:"01",label:"PUSH A",sub:"Heavy Squat · Bench · Tricep Destruction",color:"#58A45C",
+    series:[
+      {id:"p4d1-A",name:"BARBELL WORK",type:"straight",exercises:[
+        {id:"p4d1-A1",name:"Barbell Back Squat — Heavy",sets:5,repsScheme:["5","3","3","3","3"],tempo:"3/1/X/0",
+         cue:"Progressive overload — add 5 lbs per session when top set is clean. 1-sec pause at bottom. This is your long-term strength anchor. Drop sets on 3-rep sets — strip to 5-rep weight and continue."},
+      ]},
+      {id:"p4d1-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p4d1-B1",name:"Hack Squat — Maximum Volume",sets:4,repsScheme:["10","10","8","6"],tempo:"2/0/X/0",
+         cue:"After heavy squats, quads are primed. Descending reps means climbing weight. Final 6: double drop — two strips to failure. Maximum quad hypertrophy stimulus."},
+        {id:"p4d1-B2",name:"Single Leg Curl — Heavy",sets:4,repsScheme:["10","8","8","6"],tempo:"4/1/X/1",
+         cue:"4-sec eccentric. Heaviest yet. Final 6: double drop. Hamstring mass balances the heavy squat load."},
+      ]},
+      {id:"p4d1-C1",name:"C1 — CHEST POWER",type:"straight",exercises:[
+        {id:"p4d1-C1a",name:"Barbell Bench Press — Heavy",sets:5,repsScheme:["5","5","5","3","3"],tempo:"3/1/X/0",
+         cue:"1-sec pause at chest. Progressive overload. Drop sets on 3-rep sets — strip to 5-rep weight. Chest is fully fresh — these sets should feel strong."},
+      ]},
+      {id:"p4d1-C2",name:"C2 — TRICEP DESTRUCTION",type:"straight",exercises:[
+        {id:"p4d1-C2a",name:"Weighted Dips → Cable Pushdown Strip",sets:4,repsScheme:["10","10","8","6"],tempo:"3/0/X/0",
+         cue:"Weighted dips for compound tricep work. Final 6: remove weight, continue bodyweight to failure — then immediately move to cable pushdown, strip twice to absolute failure. Three-stage drop. Long head pre-fatigued. Lateral head finishes."},
+      ]},
+    ],
+  },
+
+  // DAY 2 — PULL A
+  {
+    id:"p4d2",day:"02",label:"PULL A",sub:"Conventional Deadlift · Weighted Pull-Up · Bicep Peak",color:"#58A45C",
+    series:[
+      {id:"p4d2-A",name:"BARBELL WORK",type:"straight",exercises:[
+        {id:"p4d2-A1",name:"Conventional Deadlift",sets:4,repsScheme:["4","4","4","4"],tempo:"3/0/X/0",
+         cue:"The lift is fully back. Full hip extension — lock out completely. Progressive overload every 1-2 weeks. Drop sets on all working sets — strip to RDL weight, 8 reps hip hinge. This is the athletic foundation."},
+      ]},
+      {id:"p4d2-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p4d2-B1",name:"Weighted Pull-Up — Max Effort",sets:4,repsScheme:["6","6","5","5"],tempo:"2/0/X/1",
+         cue:"Heaviest weighted pull-up work in the program. Full ROM. 1-sec squeeze. Drop: remove weight, bodyweight to failure. Back width peak."},
+        {id:"p4d2-B2",name:"Barbell Pendlay Row",sets:4,repsScheme:["6","6","6","6"],tempo:"3/1/X/0",
+         cue:"Bar to floor each rep — reset. Explosive pull. 1-sec pause at chest. Full back development. Double drop on all sets."},
+      ]},
+      {id:"p4d2-C1",name:"C1 — BACK FINISHER",type:"straight",exercises:[
+        {id:"p4d2-C1a",name:"Chest Supported Row — Max Load",sets:4,repsScheme:["10","8","8","6"],tempo:"3/1/X/1",
+         cue:"Heaviest supported row work. Load climbs. 1-sec stretch, 1-sec squeeze. Final 6: double drop immediately — maximum mid-back volume for the program."},
+      ]},
+      {id:"p4d2-C2",name:"C2 — BICEP PEAK",type:"straight",exercises:[
+        {id:"p4d2-C2a",name:"Barbell Curl → Hammer Curl Strip",sets:4,repsScheme:["10","10","8","6"],tempo:"2/0/1/1",
+         cue:"Barbell curl with full supination — 1-sec squeeze. Weight climbs. Final 6: strip to hammer curl for 12 reps (brachialis), strip again to cable curl for 15 to failure. Three-stage drop hits every angle of the bicep complex."},
+      ]},
+    ],
+  },
+
+  // DAY 3 — ATHLETIC
+  {
+    id:"p4d3",day:"03",label:"ATHLETIC",sub:"Structured Run · Athletic Performance",color:"#58A45C",
+    series:[
+      {id:"p4d3-M",name:"MOVEMENT PREP",type:"straight",exercises:[
+        {id:"p4d3-M1",name:"Full Dynamic Warm-Up",sets:1,repsScheme:["12 min"],tempo:"—",cue:"Leg swings, hip circles, A-skips, B-skips, high knees, butt kicks, lateral shuffle. Full running prep — you are an athlete again."},
+        {id:"p4d3-M2",name:"Single Leg RDL + Balance Hold",sets:3,repsScheme:["8","8","8"],tempo:"—",cue:"Each leg. RDL to balance hold at top — 3-sec hold. Running gait strength and balance in one movement."},
+      ]},
+      {id:"p4d3-R",name:"RUN INTERVALS",type:"straight",exercises:[
+        {id:"p4d3-R1",name:"Zone 3/4 Run Intervals",sets:5,repsScheme:["4 min","4 min","4 min","4 min","4 min"],tempo:"—",cue:"4 min at moderate-hard effort / 2 min walk. HR up to 155 BPM. This is ultra runner territory. Monitor every interval. Stop if cardiac symptoms — no interval is worth it."},
+      ]},
+      {id:"p4d3-Z",name:"ZONE 2",type:"straight",exercises:[
+        {id:"p4d3-Z1",name:"Easy Run or Bike Cooldown",sets:1,repsScheme:["20 min"],tempo:"—",cue:"Bring HR below 110. Conversational pace. You earned this cooldown. Enjoy moving at speed again."},
+      ]},
+    ],
+  },
+
+  // DAY 4 — PUSH B
+  {
+    id:"p4d4",day:"04",label:"PUSH B",sub:"Max OHP · Quad Destruction · Tricep Annihilation",color:"#58A45C",
+    series:[
+      {id:"p4d4-A",name:"BARBELL WORK",type:"straight",exercises:[
+        {id:"p4d4-A1",name:"Barbell Overhead Press — Heavy",sets:5,repsScheme:["5","3","3","3","3"],tempo:"2/1/X/0",
+         cue:"Standing. Full body tension. Bar over mid-foot at top. Progressive overload — this is the most athletic pressing movement. Drop sets on 3-rep sets — strip to 5-rep weight, continue."},
+      ]},
+      {id:"p4d4-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p4d4-B1",name:"Bulgarian Split Squat — Heavy",sets:4,repsScheme:["8","6","6","5"],tempo:"3/1/X/0",
+         cue:"Barbell or heavy DBs. Build across sets. Final 5: double drop immediately. Single leg strength is the athletic foundation — this is where the ultra runner lives."},
+        {id:"p4d4-B2",name:"Cable Lateral Raise — Peak Load",sets:4,repsScheme:["12","10","10","8"],tempo:"2/0/1/0",
+         cue:"Heaviest lateral raise in the program. 1-sec hold every rep. Final 8: strip twice — 3D delt development."},
+      ]},
+      {id:"p4d4-C1",name:"C1 — QUAD DESTRUCTION",type:"straight",exercises:[
+        {id:"p4d4-C1a",name:"Leg Extension — Double Drop Protocol",sets:4,repsScheme:["12","10","8","6"],tempo:"2/2/1/0",
+         cue:"2-sec peak contraction every rep — feel the VMO burn. Load climbs all 4 sets. Final 6: absolute max load — strip 25% immediately for 10 reps, strip again for 15 to failure. No rest between drops. This separates quad development from quad maintenance."},
+      ]},
+      {id:"p4d4-C2",name:"C2 — TRICEP ANNIHILATION",type:"straight",exercises:[
+        {id:"p4d4-C2a",name:"Overhead Extension → Pushdown Triple Strip",sets:4,repsScheme:["10","10","8","6"],tempo:"3/0/1/1",
+         cue:"Final set: max load overhead extension 6 reps — strip 25%, 10 reps overhead — move to pushdown position, 15 reps to failure. Three positions, no rest. Long head stretch to lateral head squeeze. Triceps pre-exhausted from pressing all day. This is the finish line."},
+      ]},
+    ],
+  },
+
+  // DAY 5 — PULL B
+  {
+    id:"p4d5",day:"05",label:"PULL B",sub:"Trap Bar Dead · Back Width · Full Athletic",color:"#58A45C",
+    series:[
+      {id:"p4d5-A",name:"BARBELL WORK",type:"straight",exercises:[
+        {id:"p4d5-A1",name:"Trap Bar Deadlift",sets:4,repsScheme:["5","5","5","5"],tempo:"3/0/X/0",
+         cue:"Trap bar reduces spinal shear — the forever lift. Full hip extension. Progressive overload. This is your longevity lift — still crushing it at 60. Drop sets on all sets."},
+      ]},
+      {id:"p4d5-B",name:"B SERIES",type:"superset",exercises:[
+        {id:"p4d5-B1",name:"Weighted Pull-Up — Width Focus",sets:4,repsScheme:["6","6","5","5"],tempo:"2/0/X/1",
+         cue:"Wide grip. Full hang. Peak lat width. Drop: remove weight, bodyweight to failure. The V-taper finisher."},
+        {id:"p4d5-B2",name:"Standing Calf Raise — Heavy",sets:4,repsScheme:["12","12","10","10"],tempo:"2/2/X/1",
+         cue:"Gastroc focus — straight knee. Heavy. Final 10: drop to 15 immediately. Running calf power and mass together."},
+      ]},
+      {id:"p4d5-C1",name:"C1 — ARM THICKNESS",type:"straight",exercises:[
+        {id:"p4d5-C1a",name:"Barbell Curl → Hammer → Cable",sets:4,repsScheme:["10","10","8","6"],tempo:"2/0/1/1",
+         cue:"Weight climbs. Final 6: three-stage drop — strip to hammer curl for 10 reps (brachialis), strip again to cable curl for 15 to failure. Comprehensive bicep complex annihilation."},
+      ]},
+      {id:"p4d5-C2",name:"C2 — ATHLETIC FINISHER",type:"straight",exercises:[
+        {id:"p4d5-C2a",name:"Farmer's Carry — Max Load",sets:5,repsScheme:["40m","40m","40m","40m","40m"],tempo:"—",
+         cue:"Heaviest carry in the program. Tall spine. The ultra runner's finisher — grip, core, gait, mental toughness under load. HR will climb. Stay under 155 BPM. This is what the whole program has been building toward."},
+      ]},
+    ],
+  },
+],
+}; // end PROGRAMS
 
 // ─── AUDIO ────────────────────────────────────────────────────────────────────
-function useBeep() {
+function useBeep(){
   const ctx=useRef(null);
   const gc=()=>{if(!ctx.current)try{ctx.current=new(window.AudioContext||window.webkitAudioContext)();}catch{}return ctx.current;};
   const beep=useCallback((f=880,d=0.12,v=0.4)=>{try{const c=gc();if(!c)return;const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type="sine";g.gain.setValueAtTime(v,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+d);o.start(c.currentTime);o.stop(c.currentTime+d);}catch{}},[]);
@@ -491,18 +626,58 @@ function useBeep() {
 }
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
-const LS="jackedlete_v2";
+const LS="jackedlete_v5";
 function load(){try{const r=localStorage.getItem(LS);return r?JSON.parse(r):{phase:2,logs:{},done:{}};}catch{return{phase:2,logs:{},done:{}};}}
 function save(s){try{localStorage.setItem(LS,JSON.stringify(s));}catch{}}
 function wk(){const d=new Date(),j=new Date(d.getFullYear(),0,1);return`${d.getFullYear()}-W${Math.ceil(((d-j)/86400000+j.getDay()+1)/7)}`;}
 function fd(){return new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});}
 function ft(s){return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,"0")}`;}
 
+// ─── DROP SET ENGINE ──────────────────────────────────────────────────────────
+function makeDrops(repsScheme, phase, isFinisher=false){
+  const nums=repsScheme.map(r=>parseInt(r)||0).filter(n=>n>0);
+  const isDescending=nums.length>=3&&nums[nums.length-1]<nums[0]&&nums[0]>=8;
+  const isWave=repsScheme.includes("6")&&repsScheme.includes("8");
+  return repsScheme.map((rep,i)=>{
+    const n=parseInt(rep)||0;
+    const isLast=i===repsScheme.length-1;
+    const isHeavy=n<=6&&n>=3;
+    const isVol=n===8;
+    if(isFinisher||isDescending){
+      return isLast?{drops:2,repTarget:"10-12 → 15+",pct:25}:null;
+    }
+    if(isWave){
+      if(phase===1)return isLast?{drops:1,repTarget:"10-12",pct:20}:null;
+      if(phase===2){
+        if(isHeavy&&isLast)return{drops:2,repTarget:"10-12 → 15",pct:20};
+        if(isHeavy)return{drops:1,repTarget:"10-12",pct:20};
+        if(isVol&&isLast)return{drops:1,repTarget:"10",pct:15};
+        return null;
+      }
+      if(phase===3){
+        if(isHeavy)return{drops:2,repTarget:"10-12 → 15",pct:20};
+        if(isVol)return{drops:1,repTarget:"10-12",pct:15};
+        return null;
+      }
+      if(phase===4){
+        if(isHeavy)return{drops:2,repTarget:"8-10 → 12-15",pct:20};
+        if(isVol)return{drops:1,repTarget:"10-12",pct:15};
+        return null;
+      }
+    }
+    if(n<=5&&n>=1){
+      if(phase>=3)return{drops:2,repTarget:"8-10 → 12",pct:20};
+      return null;
+    }
+    return null;
+  });
+}
+
 // ─── APP ──────────────────────────────────────────────────────────────────────
-function App() {
+function App(){
   const [store,setStore]=useState(load);
   const [activeDay,setActiveDay]=useState(0);
-  const [view,setView]=useState("workout"); // workout | phases | history
+  const [view,setView]=useState("workout");
   const [timer,setTimer]=useState(null);
   const [toast,setToast]=useState(null);
   const [showAdvance,setShowAdvance]=useState(false);
@@ -511,7 +686,6 @@ function App() {
   const {beep,chime}=useBeep();
 
   useEffect(()=>{save(store);},[store]);
-
   useEffect(()=>{
     if(!timer?.active||timer.remaining<=0)return;
     tickRef.current=setTimeout(()=>{
@@ -534,7 +708,6 @@ function App() {
   const adjTimer=d=>setTimer(t=>t?{...t,remaining:Math.max(0,t.remaining+d),total:Math.max(0,t.total+d)}:t);
   const pauseTimer=()=>setTimer(t=>t?{...t,active:!t.active}:t);
   const addTimer=s=>setTimer(t=>t?{...t,remaining:t.remaining+s,total:t.total+s,active:true}:t);
-
   const showToast=(msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),2400);};
 
   const phase=store.phase;
@@ -582,12 +755,9 @@ function App() {
       `}</style>
 
       {toast&&<div style={{position:"fixed",bottom:96,left:"50%",transform:"translateX(-50%)",background:toast.type==="ok"?"#182818":"#281818",border:`1px solid ${toast.type==="ok"?"#4A8A4A":"#8A3A3A"}`,color:toast.type==="ok"?"#7ED881":"#E87B6E",padding:"9px 18px",borderRadius:8,fontSize:12,fontFamily:"Barlow,sans-serif",fontWeight:600,zIndex:9999,animation:"ts .18s ease",boxShadow:"0 4px 20px rgba(0,0,0,.7)",whiteSpace:"nowrap"}}>{toast.msg}</div>}
-
       {timer&&<RestTimer timer={timer} onDismiss={dismissTimer} onAdjust={adjTimer} onPause={pauseTimer} onAdd={addTimer}/>}
-
       {showAdvance&&<AdvanceModal phase={phase} phases={PHASES} onConfirm={advancePhase} onCancel={()=>setShowAdvance(false)}/>}
 
-      {/* HEADER */}
       <div style={{background:"#0D0D0D",borderBottom:`2px solid ${phaseData.color}`,padding:"0 14px",position:"sticky",top:0,zIndex:200}}>
         <div style={{maxWidth:680,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",height:52}}>
           <div style={{display:"flex",alignItems:"baseline",gap:8}}>
@@ -604,39 +774,36 @@ function App() {
 
       {view==="workout"&&<WorkoutView program={program} activeDay={activeDay} setActiveDay={setActiveDay} currentDay={currentDay} progress={progress} phaseData={phaseData} logSet={logSet} getLog={getLog} isDone={isDone} toggleDone={toggleDone} showToast={showToast} startTimer={startTimer} phase={phase} onSuggestAdvance={()=>setShowAdvance(true)}/>}
       {view==="phases"&&<PhasesView phases={PHASES} currentPhase={phase} onAdvance={()=>setShowAdvance(true)}/>}
-      {view==="history"&&<HistoryView store={store} weekKey={weekKey} program={program} phase={phase}/>}
+      {view==="history"&&<HistoryView store={store} weekKey={weekKey} phase={phase}/>}
     </div>
   );
 }
 
 // ─── ADVANCE MODAL ────────────────────────────────────────────────────────────
-function AdvanceModal({phase,phases,onConfirm,onCancel}) {
-  const next=phases[phase]; // phase is 1-indexed, array is 0-indexed
+function AdvanceModal({phase,phases,onConfirm,onCancel}){
+  const next=phases[phase];
   if(!next)return null;
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
       <div style={{background:"#131313",border:`2px solid ${next.color}`,borderRadius:16,padding:24,maxWidth:380,width:"100%"}}>
-        <div style={{fontSize:11,color:"#666",fontWeight:700,letterSpacing:".15em",marginBottom:4}}>PHASE ADVANCE</div>
+        <div style={{fontSize:11,color:"#555",fontWeight:700,letterSpacing:".15em",marginBottom:4}}>PHASE ADVANCE</div>
         <div style={{fontSize:22,fontWeight:900,color:next.color,letterSpacing:".1em",marginBottom:4}}>PHASE {phase+1} — {next.name}</div>
         <div style={{fontSize:12,color:"#888",fontFamily:"Barlow,sans-serif",marginBottom:16,lineHeight:1.5}}>{next.description}</div>
-
         <div style={{marginBottom:16}}>
-          <div style={{fontSize:10,color:"#555",fontWeight:700,letterSpacing:".12em",marginBottom:8}}>WHAT UNLOCKS</div>
+          <div style={{fontSize:10,color:"#444",fontWeight:700,letterSpacing:".12em",marginBottom:8}}>WHAT UNLOCKS</div>
           {next.unlocks.map((u,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-              <div style={{width:6,height:6,borderRadius:"50%",background:next.color,flexShrink:0}}/>
-              <span style={{fontSize:11,color:"#CCC",fontFamily:"Barlow,sans-serif"}}>{u}</span>
+            <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
+              <div style={{width:5,height:5,borderRadius:"50%",background:next.color,flexShrink:0}}/>
+              <span style={{fontSize:11,color:"#BBB",fontFamily:"Barlow,sans-serif"}}>{u}</span>
             </div>
           ))}
         </div>
-
-        <div style={{background:"rgba(192,57,43,.08)",border:"1px solid rgba(192,57,43,.2)",borderRadius:8,padding:"10px 12px",marginBottom:16}}>
-          <div style={{fontSize:9,color:"#E87B6E",fontWeight:700,letterSpacing:".12em",marginBottom:4}}>⚠️  CONFIRM BEFORE ADVANCING</div>
+        <div style={{background:"rgba(232,123,110,.08)",border:"1px solid rgba(232,123,110,.2)",borderRadius:8,padding:"10px 12px",marginBottom:16}}>
+          <div style={{fontSize:9,color:"#E87B6E",fontWeight:700,letterSpacing:".12em",marginBottom:4}}>⚠️ CONFIRM BEFORE ADVANCING</div>
           <div style={{fontSize:10,color:"#C07060",fontFamily:"Barlow,sans-serif",lineHeight:1.5}}>Only advance when your cardiologist has cleared you for increased intensity. Do not self-advance based on how you feel alone.</div>
         </div>
-
         <div style={{display:"flex",gap:10}}>
-          <button className="hov" onClick={onCancel} style={{flex:1,height:42,borderRadius:10,background:"#1A1A1A",border:"1px solid #2A2A2A",color:"#666",fontSize:12,fontWeight:700,cursor:"pointer"}}>NOT YET</button>
+          <button className="hov" onClick={onCancel} style={{flex:1,height:42,borderRadius:10,background:"#1A1A1A",border:"1px solid #2A2A2A",color:"#555",fontSize:12,fontWeight:700,cursor:"pointer"}}>NOT YET</button>
           <button className="hov" onClick={onConfirm} style={{flex:1,height:42,borderRadius:10,background:next.color,border:"none",color:"#000",fontSize:12,fontWeight:800,letterSpacing:".08em",cursor:"pointer"}}>ADVANCE →</button>
         </div>
       </div>
@@ -645,65 +812,50 @@ function AdvanceModal({phase,phases,onConfirm,onCancel}) {
 }
 
 // ─── PHASES VIEW ──────────────────────────────────────────────────────────────
-function PhasesView({phases,currentPhase,onAdvance}) {
+function PhasesView({phases,currentPhase,onAdvance}){
   return(
     <div style={{maxWidth:680,margin:"0 auto",padding:"14px 14px 80px"}}>
       <div style={{marginBottom:18}}>
         <div style={{fontSize:21,fontWeight:900,color:"#EEE",letterSpacing:".1em"}}>PROGRESSION PHASES</div>
         <div style={{fontSize:11,color:"#444",fontFamily:"Barlow,sans-serif",marginTop:2}}>Your roadmap back to full athletic function</div>
       </div>
-
-      {phases.map((p,i)=>{
-        const isCurrent=p.id===currentPhase;
-        const isPast=p.id<currentPhase;
-        const isNext=p.id===currentPhase+1;
+      {phases.map((p)=>{
+        const isCurrent=p.id===currentPhase,isPast=p.id<currentPhase;
         return(
           <div key={p.id} style={{background:"#0F0F0F",border:`1px solid ${isCurrent?p.color:"#1E1E1E"}`,borderLeft:`4px solid ${isPast?"#333":p.color}`,borderRadius:12,marginBottom:12,overflow:"hidden",opacity:p.id>currentPhase+1?.5:1}}>
-            {/* Phase header */}
             <div style={{padding:"12px 14px",background:isCurrent?`${p.color}11`:"#141414",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
-                  <span style={{fontSize:18,fontWeight:900,color:isPast?"#444":p.color,letterSpacing:".1em"}}>PHASE {p.id} — {p.name}</span>
-                  {isCurrent&&<span style={{background:p.color,color:"#000",fontSize:8,fontWeight:800,borderRadius:4,padding:"2px 6px",letterSpacing:".08em"}}>CURRENT</span>}
-                  {isPast&&<span style={{background:"#222",color:"#555",fontSize:8,fontWeight:800,borderRadius:4,padding:"2px 6px",letterSpacing:".08em"}}>COMPLETED</span>}
+                  <span style={{fontSize:17,fontWeight:900,color:isPast?"#444":p.color,letterSpacing:".1em"}}>PHASE {p.id} — {p.name}</span>
+                  {isCurrent&&<span style={{background:p.color,color:"#000",fontSize:8,fontWeight:800,borderRadius:4,padding:"2px 6px"}}>CURRENT</span>}
+                  {isPast&&<span style={{background:"#222",color:"#444",fontSize:8,fontWeight:800,borderRadius:4,padding:"2px 6px"}}>DONE</span>}
                 </div>
-                <div style={{fontSize:11,color:"#666",fontFamily:"Barlow,sans-serif"}}>{p.weeks} · HR Ceiling {p.hrCeiling} BPM · RPE ≤ {p.rpe}</div>
+                <div style={{fontSize:11,color:"#555",fontFamily:"Barlow,sans-serif"}}>{p.weeks} · HR ≤ {p.hrCeiling} · RPE ≤ {p.rpe}</div>
               </div>
-              {isPast&&<span style={{fontSize:24,color:"#3A3A3A"}}>✓</span>}
+              {isPast&&<span style={{fontSize:22,color:"#2A2A2A"}}>✓</span>}
             </div>
-
             <div style={{padding:"12px 14px"}}>
-              <div style={{fontSize:11,color:"#888",fontFamily:"Barlow,sans-serif",lineHeight:1.6,marginBottom:12}}>{p.description}</div>
-
-              <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
-                <div style={{background:"#181818",border:"1px solid #222",borderRadius:7,padding:"5px 10px"}}>
-                  <div style={{fontSize:8,color:"#444",fontWeight:700,letterSpacing:".1em",marginBottom:2}}>CARDIO TARGET</div>
-                  <div style={{fontSize:10,color:p.color,fontWeight:700}}>{p.cardioTarget}</div>
-                </div>
+              <div style={{fontSize:11,color:"#777",fontFamily:"Barlow,sans-serif",lineHeight:1.6,marginBottom:10}}>{p.description}</div>
+              <div style={{background:"#181818",border:"1px solid #222",borderRadius:7,padding:"5px 10px",marginBottom:10,display:"inline-block"}}>
+                <div style={{fontSize:8,color:"#444",fontWeight:700,letterSpacing:".1em",marginBottom:1}}>CARDIO</div>
+                <div style={{fontSize:10,color:p.color,fontWeight:700}}>{p.cardioTarget}</div>
               </div>
-
-              {/* Unlocks */}
-              <div style={{marginBottom:isCurrent&&p.criteria.length>0?12:0}}>
-                <div style={{fontSize:9,color:"#444",fontWeight:700,letterSpacing:".12em",marginBottom:6}}>PHASE UNLOCKS</div>
-                <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                  {p.unlocks.map((u,j)=>(
-                    <div key={j} style={{background:"#181818",border:`1px solid ${isPast?"#2A2A2A":p.color+"33"}`,borderRadius:6,padding:"3px 8px",fontSize:9,color:isPast?"#555":p.color,fontWeight:700}}>{u}</div>
-                  ))}
-                </div>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:isCurrent&&p.criteria.length>0?12:0}}>
+                {p.unlocks.map((u,j)=>(
+                  <div key={j} style={{background:"#181818",border:`1px solid ${isPast?"#222":p.color+"33"}`,borderRadius:5,padding:"3px 8px",fontSize:9,color:isPast?"#444":p.color,fontWeight:700}}>{u}</div>
+                ))}
               </div>
-
-              {/* Advance criteria */}
               {isCurrent&&p.criteria.length>0&&(
                 <div>
-                  <div style={{fontSize:9,color:"#444",fontWeight:700,letterSpacing:".12em",marginBottom:6,marginTop:12}}>CRITERIA TO ADVANCE</div>
+                  <div style={{fontSize:9,color:"#444",fontWeight:700,letterSpacing:".12em",marginBottom:6}}>CRITERIA TO ADVANCE</div>
                   {p.criteria.map((c,j)=>(
-                    <div key={j} style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:6}}>
-                      <div style={{width:5,height:5,borderRadius:"50%",background:"#333",flexShrink:0,marginTop:4}}/>
-                      <span style={{fontSize:10,color:"#888",fontFamily:"Barlow,sans-serif",lineHeight:1.5}}>{c}</span>
+                    <div key={j} style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:5}}>
+                      <div style={{width:4,height:4,borderRadius:"50%",background:"#2A2A2A",flexShrink:0,marginTop:4}}/>
+                      <span style={{fontSize:10,color:"#777",fontFamily:"Barlow,sans-serif",lineHeight:1.5}}>{c}</span>
                     </div>
                   ))}
-                  <button className="hov" onClick={onAdvance} style={{marginTop:12,width:"100%",height:40,borderRadius:9,background:"#181818",border:`1px solid ${phases[currentPhase]?.color||"#333"}`,color:phases[currentPhase]?.color||"#666",fontSize:11,fontWeight:800,letterSpacing:".1em",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                    I'M READY — ADVANCE TO PHASE {p.id+1} →
+                  <button className="hov" onClick={onAdvance} style={{marginTop:12,width:"100%",height:40,borderRadius:9,background:"#181818",border:`1px solid ${phases[currentPhase]?.color||"#333"}`,color:phases[currentPhase]?.color||"#555",fontSize:11,fontWeight:800,letterSpacing:".1em",cursor:"pointer"}}>
+                    READY — ADVANCE TO PHASE {p.id+1} →
                   </button>
                 </div>
               )}
@@ -716,56 +868,37 @@ function PhasesView({phases,currentPhase,onAdvance}) {
 }
 
 // ─── WORKOUT VIEW ─────────────────────────────────────────────────────────────
-function WorkoutView({program,activeDay,setActiveDay,currentDay,progress,phaseData,logSet,getLog,isDone,toggleDone,showToast,startTimer,phase,onSuggestAdvance}) {
+function WorkoutView({program,activeDay,setActiveDay,currentDay,progress,phaseData,logSet,getLog,isDone,toggleDone,showToast,startTimer,phase,onSuggestAdvance}){
   return(
     <div style={{maxWidth:680,margin:"0 auto",padding:"12px 12px 320px"}}>
-      {/* Phase banner */}
       <div style={{background:`${phaseData.color}11`,border:`1px solid ${phaseData.color}33`,borderRadius:10,padding:"8px 12px",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
           <div style={{fontSize:10,color:phaseData.color,fontWeight:800,letterSpacing:".12em"}}>PHASE {phase} — {phaseData.name}</div>
-          <div style={{fontSize:10,color:"#666",fontFamily:"Barlow,sans-serif"}}>{phaseData.sub} · HR ≤ {phaseData.hrCeiling} · RPE ≤ {phaseData.rpe}</div>
+          <div style={{fontSize:10,color:"#555",fontFamily:"Barlow,sans-serif"}}>{phaseData.sub} · HR ≤ {phaseData.hrCeiling} · RPE ≤ {phaseData.rpe}</div>
         </div>
-        <button className="hov" onClick={()=>{}} style={{background:"transparent",border:`1px solid ${phaseData.color}44`,borderRadius:6,padding:"3px 8px",color:phaseData.color,fontSize:9,fontWeight:700,cursor:"pointer"}} onClick={onSuggestAdvance}>ADVANCE?</button>
+        <button className="hov" onClick={onSuggestAdvance} style={{background:"transparent",border:`1px solid ${phaseData.color}44`,borderRadius:6,padding:"3px 8px",color:phaseData.color,fontSize:9,fontWeight:700,cursor:"pointer"}}>ADVANCE?</button>
       </div>
-
-      {/* Day selector */}
       <div style={{display:"flex",gap:6,marginBottom:14,overflowX:"auto",paddingBottom:3}}>
         {program.map((d,i)=>(
-          <button key={d.id} className="hov" onClick={()=>setActiveDay(i)} style={{flex:"0 0 auto",background:activeDay===i?phaseData.color:"#131313",border:`1px solid ${activeDay===i?phaseData.color:"#222"}`,borderRadius:10,padding:"8px 12px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:1,minWidth:64}}>
-            <span style={{fontSize:16,fontWeight:900,color:activeDay===i?"#000":"#555",lineHeight:1}}>{d.day}</span>
+          <button key={d.id} className="hov" onClick={()=>setActiveDay(i)} style={{flex:"0 0 auto",background:activeDay===i?phaseData.color:"#131313",border:`1px solid ${activeDay===i?phaseData.color:"#222"}`,borderRadius:10,padding:"8px 12px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:1,minWidth:62}}>
+            <span style={{fontSize:15,fontWeight:900,color:activeDay===i?"#000":"#555",lineHeight:1}}>{d.day}</span>
             <span style={{fontSize:8,fontWeight:800,color:activeDay===i?"#000":phaseData.color,letterSpacing:".08em"}}>{d.label}</span>
           </button>
         ))}
       </div>
-
-      {/* Day header */}
       <div style={{background:"#131313",border:"1px solid #222",borderLeft:`4px solid ${phaseData.color}`,borderRadius:12,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
-          <div style={{fontSize:19,fontWeight:900,color:phaseData.color,letterSpacing:".1em"}}>DAY {currentDay.day} — {currentDay.label}</div>
-          <div style={{fontSize:11,color:"#666",fontWeight:500,marginTop:1}}>{currentDay.sub}</div>
+          <div style={{fontSize:18,fontWeight:900,color:phaseData.color,letterSpacing:".1em"}}>DAY {currentDay.day} — {currentDay.label}</div>
+          <div style={{fontSize:11,color:"#555",fontWeight:500,marginTop:1}}>{currentDay.sub}</div>
         </div>
         <Ring progress={progress} color={phaseData.color}/>
       </div>
-
-      {/* Cardiac banner */}
-      <div style={{background:"rgba(192,57,43,.07)",border:"1px solid rgba(192,57,43,.22)",borderRadius:8,padding:"6px 10px",marginBottom:12,display:"flex",alignItems:"center",gap:6}}>
+      <div style={{background:"rgba(232,123,110,.07)",border:"1px solid rgba(232,123,110,.22)",borderRadius:8,padding:"6px 10px",marginBottom:12,display:"flex",alignItems:"center",gap:6}}>
         <span style={{fontSize:13}}>❤️</span>
-        <span style={{fontSize:9,color:"#E87B6E",fontWeight:600,letterSpacing:".04em"}}>HR MAX {phaseData.hrCeiling} BPM · NO VALSALVA · RPE ≤ {phaseData.rpe} · STOP: chest pressure / dizziness / jaw pain</span>
+        <span style={{fontSize:9,color:"#E87B6E",fontWeight:600,letterSpacing:".04em"}}>HR MAX {phaseData.hrCeiling} · NO VALSALVA · RPE ≤ {phaseData.rpe} · STOP: chest pressure / dizziness / jaw or arm pain</span>
       </div>
-
-      {/* Rest legend */}
-      <div style={{display:"flex",gap:5,marginBottom:12,flexWrap:"wrap"}}>
-        {[{l:"A SERIES",t:phase>=3?"3:00/2:30":"2:00/2:30",c:"#C9A84C"},{l:"B SERIES",t:"1:30",c:"#7EB8D4"},{l:"C SERIES",t:"1:00",c:"#A8D4A0"}].map(r=>(
-          <div key={r.l} style={{display:"flex",alignItems:"center",gap:4,background:"#131313",border:"1px solid #1E1E1E",borderRadius:6,padding:"3px 7px"}}>
-            <div style={{width:4,height:4,borderRadius:"50%",background:r.c}}/>
-            <span style={{fontSize:8,color:"#444",fontWeight:700}}>{r.l}</span>
-            <span style={{fontSize:8,color:r.c,fontWeight:800}}>{r.t}</span>
-          </div>
-        ))}
-      </div>
-
       {currentDay.series.map((s,si)=>(
-        <SeriesBlock key={s.id} series={s} dayLabel={currentDay.label} phaseColor={phaseData.color} logSet={logSet} getLog={getLog} isDone={isDone} toggleDone={toggleDone} showToast={showToast} startTimer={startTimer} delay={si*70} phase={phase}/>
+        <SeriesBlock key={s.id} series={s} dayLabel={currentDay.label} phaseData={phaseData} logSet={logSet} getLog={getLog} isDone={isDone} toggleDone={toggleDone} showToast={showToast} startTimer={startTimer} delay={si*60} phase={phase}/>
       ))}
     </div>
   );
@@ -785,50 +918,63 @@ function Ring({progress,color}){
 }
 
 // ─── SERIES BLOCK ─────────────────────────────────────────────────────────────
-function SeriesBlock({series,dayLabel,phaseColor,logSet,getLog,isDone,toggleDone,showToast,startTimer,delay,phase}){
+function SeriesBlock({series,dayLabel,phaseData,logSet,getLog,isDone,toggleDone,showToast,startTimer,delay,phase}){
   const [open,setOpen]=useState(true);
-  const sc=series.name.startsWith("A")||series.name.startsWith("BAR")||series.name.startsWith("RUN")?"#C9A84C":series.name.startsWith("B")?"#7EB8D4":series.name.startsWith("C")?"#A8D4A0":"#888";
+  const n=series.name;
+  const sc=n.startsWith("A ")||n.startsWith("BARBELL")||n.startsWith("RUN")?"#C9A84C":
+           n.startsWith("B ")?"#7EB8D4":
+           n.includes("C1")||n.includes("CHEST")||n.includes("QUAD")||n.includes("ARM")||n.includes("ATHLETIC FIN")?"#A8D4A0":
+           n.includes("C2")||n.includes("TRICEP")||n.includes("BICEP")||n.includes("BACK FIN")||n.includes("COND")?"#D4A8C8":
+           n.startsWith("ZONE")||n.startsWith("MOVE")||n.startsWith("FINISH")?"#888":"#888";
   const rest=getRestInfo(series.name,dayLabel);
-  const isASeries=series.name==="A SERIES"||series.name==="BARBELL WORK";
+  const isAorBarbell=n==="A SERIES"||n==="BARBELL WORK";
+  const isFinisher=n.includes("C1")||n.includes("C2")||n.includes("CHEST")||n.includes("QUAD")||n.includes("TRICEP")||n.includes("BICEP")||n.includes("BACK FIN")||n.includes("ARM")||n.includes("COND");
+
   return(
-    <div className="fb" style={{background:"#0F0F0F",border:"1px solid #1E1E1E",borderRadius:12,marginBottom:10,overflow:"hidden",animationDelay:`${delay}ms`,opacity:0,animationFillMode:"forwards"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",background:"#151515",borderBottom:open?"1px solid #1E1E1E":"none"}}>
+    <div className="fb" style={{background:"#0F0F0F",border:"1px solid #1A1A1A",borderRadius:12,marginBottom:10,overflow:"hidden",animationDelay:`${delay}ms`,opacity:0,animationFillMode:"forwards"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",background:"#141414",borderBottom:open?"1px solid #1A1A1A":"none"}}>
         <div onClick={()=>setOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:8,flex:1,cursor:"pointer"}}>
-          <div style={{width:3,height:14,background:sc,borderRadius:2}}/>
-          <span style={{fontSize:10,fontWeight:800,color:sc,letterSpacing:".15em"}}>{series.name}</span>
-          {series.type==="superset"&&<span style={{fontSize:7,fontWeight:700,color:"#000",background:sc,borderRadius:3,padding:"1px 4px",letterSpacing:".08em"}}>SUPERSET</span>}
+          <div style={{width:3,height:14,background:sc,borderRadius:2,flexShrink:0}}/>
+          <span style={{fontSize:10,fontWeight:800,color:sc,letterSpacing:".12em"}}>{series.name}</span>
+          {series.type==="superset"&&<span style={{fontSize:7,fontWeight:700,color:"#000",background:sc,borderRadius:3,padding:"1px 4px",letterSpacing:".06em"}}>SUPERSET</span>}
+          {isFinisher&&<span style={{fontSize:7,fontWeight:700,color:"#000",background:"#E87B6E",borderRadius:3,padding:"1px 4px",letterSpacing:".06em"}}>↓ DROPS</span>}
         </div>
         <div style={{display:"flex",alignItems:"center",gap:6}}>
-          {rest.secs>0&&<button className="hov" onClick={()=>startTimer(rest.secs,rest.label,rest.cardiac,sc)} style={{display:"flex",alignItems:"center",gap:4,background:"#1A1A1A",border:`1px solid ${sc}33`,borderRadius:6,padding:"3px 8px",color:sc,fontSize:9,fontWeight:800,cursor:"pointer"}}><span>⏱</span>{rest.label}</button>}
+          {rest.secs>0&&<button className="hov" onClick={()=>startTimer(rest.secs,`${series.name} — ${rest.label}`,rest.cardiac,sc)} style={{display:"flex",alignItems:"center",gap:4,background:"#1A1A1A",border:`1px solid ${sc}33`,borderRadius:6,padding:"3px 8px",color:sc,fontSize:9,fontWeight:800,cursor:"pointer"}}>⏱ {rest.label}</button>}
           <span onClick={()=>setOpen(o=>!o)} style={{color:"#333",fontSize:12,cursor:"pointer"}}>{open?"▲":"▼"}</span>
         </div>
       </div>
       {open&&series.exercises.map((ex,ei)=>(
-        <ExBlock key={ex.id} ex={ex} isLast={ei===series.exercises.length-1} sc={sc} rest={rest} logSet={logSet} getLog={getLog} isDone={isDone} toggleDone={toggleDone} showToast={showToast} startTimer={startTimer} phase={phase} isASeries={isASeries}/>
+        <ExBlock key={ex.id} ex={ex} isLast={ei===series.exercises.length-1} sc={sc} rest={rest} logSet={logSet} getLog={getLog} isDone={isDone} toggleDone={toggleDone} showToast={showToast} startTimer={startTimer} phase={phase} isDropEligible={isAorBarbell||isFinisher}/>
       ))}
     </div>
   );
 }
 
 // ─── EXERCISE BLOCK ───────────────────────────────────────────────────────────
-function ExBlock({ex,isLast,sc,rest,logSet,getLog,isDone,toggleDone,showToast,startTimer,phase,isASeries}){
-  const dropCfg = isASeries ? makeDrops(ex.repsScheme, phase) : ex.repsScheme.map(()=>null);
+function ExBlock({ex,isLast,sc,rest,logSet,getLog,isDone,toggleDone,showToast,startTimer,phase,isDropEligible}){
+  const isFinisherScheme = (() => {
+    const nums=ex.repsScheme.map(r=>parseInt(r)||0).filter(n=>n>0);
+    return nums.length>=3&&nums[nums.length-1]<nums[0]&&nums[0]>=8;
+  })();
+  const dropCfg=isDropEligible?makeDrops(ex.repsScheme,phase,isFinisherScheme):ex.repsScheme.map(()=>null);
+  const hasAnyDrop=dropCfg.some(Boolean);
   return(
     <div style={{borderBottom:isLast?"none":"1px solid #181818"}}>
       <div style={{padding:"8px 12px 4px"}}>
-        <div style={{fontSize:13,fontWeight:700,color:"#E8E8E8",letterSpacing:".04em",marginBottom:3}}>{ex.name}</div>
-        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-          <Pill label="TEMPO" val={ex.tempo} color="#C9A84C"/>
+        <div style={{fontSize:13,fontWeight:700,color:"#E8E8E8",marginBottom:3}}>{ex.name}</div>
+        <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",marginBottom:3}}>
+          {ex.tempo!=="—"&&<Pill label="TEMPO" val={ex.tempo} color="#C9A84C"/>}
           <Pill label="SETS" val={ex.sets} color={sc}/>
-          <Pill label="REST" val={rest.secs>0?rest.label:"—"} color="#555"/>
-          {dropCfg.some(Boolean)&&<Pill label="DROP SETS" val="✓" color="#E87B6E"/>}
+          {rest.secs>0&&<Pill label="REST" val={rest.label} color="#444"/>}
+          {hasAnyDrop&&<Pill label="DROP SETS" val="↓" color="#E87B6E"/>}
         </div>
-        <div style={{marginTop:3,fontSize:10,color:"#555",fontFamily:"Barlow,sans-serif",fontStyle:"italic",lineHeight:1.4}}>★ {ex.cue}</div>
+        <div style={{fontSize:10,color:"#4A4A4A",fontFamily:"Barlow,sans-serif",fontStyle:"italic",lineHeight:1.5}}>{ex.cue}</div>
       </div>
       <div style={{padding:"0 12px 8px"}}>
-        <div style={{display:"grid",gridTemplateColumns:"22px 48px 1fr 1fr 30px 30px",gap:4,alignItems:"center",padding:"2px 0",borderBottom:"1px solid #1A1A1A",marginBottom:2}}>
+        <div style={{display:"grid",gridTemplateColumns:"20px 46px 1fr 1fr 28px 28px",gap:4,padding:"2px 0",borderBottom:"1px solid #1A1A1A",marginBottom:2}}>
           {["#","TARGET","WEIGHT","REPS","⏱","✓"].map(h=>(
-            <span key={h} style={{fontSize:7.5,color:"#333",fontWeight:700,letterSpacing:".08em",textAlign:["WEIGHT","REPS"].includes(h)?"center":"left"}}>{h}</span>
+            <span key={h} style={{fontSize:7,color:"#2A2A2A",fontWeight:700,letterSpacing:".08em",textAlign:["WEIGHT","REPS"].includes(h)?"center":"left"}}>{h}</span>
           ))}
         </div>
         {Array.from({length:ex.sets}).map((_,si)=>(
@@ -846,45 +992,35 @@ function ExBlock({ex,isLast,sc,rest,logSet,getLog,isDone,toggleDone,showToast,st
 
 // ─── DROP SET ROWS ────────────────────────────────────────────────────────────
 function DropSetRows({cfg,exId,setIdx,logSet,getLog,isDone,toggleDone,showToast,sc,workingWeight}){
-  // Build drop targets: "DROP 1", "DROP 2"
-  const drops = cfg.drops || 1;
-  const repParts = cfg.repTarget ? cfg.repTarget.split("→").map(s=>s.trim()) : [];
-  const pct = cfg.pct || 20;
-  const suggestedWeights = Array.from({length:drops},(_,i)=>{
-    const w = parseFloat(workingWeight);
-    if(!w) return "";
-    const factor = 1 - (pct/100)*(i+1);
-    return Math.round(w*factor/2.5)*2.5;
+  const drops=cfg.drops||1;
+  const repParts=cfg.repTarget?cfg.repTarget.split("→").map(s=>s.trim()):[];
+  const pct=cfg.pct||20;
+  const sw=parseFloat(workingWeight);
+  const suggested=Array.from({length:drops},(_,i)=>{
+    if(!sw)return"";
+    return Math.round(sw*(1-(pct/100)*(i+1))/2.5)*2.5;
   });
-
   return(
-    <div style={{background:"rgba(232,123,110,0.04)",borderLeft:"3px solid #E87B6E33",marginLeft:4,marginBottom:4,borderRadius:"0 6px 6px 0"}}>
-      {/* Drop set header */}
-      <div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 8px 2px"}}>
-        <div style={{width:2,height:10,background:"#E87B6E",borderRadius:1}}/>
-        <span style={{fontSize:8,color:"#E87B6E",fontWeight:800,letterSpacing:".15em"}}>DROP {drops===2?"SETS":"SET"}</span>
-        <span style={{fontSize:8,color:"#663333",fontFamily:"Barlow,sans-serif"}}>↓{pct}% · {cfg.repTarget} reps to failure</span>
+    <div style={{background:"rgba(232,123,110,.04)",borderLeft:"2px solid rgba(232,123,110,.25)",marginLeft:6,marginBottom:4,borderRadius:"0 6px 6px 0",paddingTop:2}}>
+      <div style={{display:"flex",alignItems:"center",gap:5,padding:"3px 8px 1px"}}>
+        <span style={{fontSize:8,color:"#E87B6E",fontWeight:800,letterSpacing:".15em"}}>DROP {drops>1?"SETS":"SET"}</span>
+        <span style={{fontSize:8,color:"#5A2A2A",fontFamily:"Barlow,sans-serif"}}>↓{pct}% · {cfg.repTarget} · failure</span>
       </div>
       {Array.from({length:drops}).map((_,di)=>{
-        const dropKey=`drop_${exId}_${setIdx}_${di}`;
-        const existing=getLog(dropKey,0);
-        const [dw,setDw]=useState(existing?.weight||suggestedWeights[di]||"");
-        const [dr,setDr]=useState(existing?.reps||"");
-        const done=isDone(dropKey,0);
-        const repHint=repParts[di]||repParts[repParts.length-1]||"to failure";
-        const complete=()=>{
-          logSet(dropKey,0,dw,dr);
-          toggleDone(dropKey,0);
-          if(!done)showToast(`Drop ${di+1} logged ✓`);
-        };
+        const dk=`drop_${exId}_${setIdx}_${di}`;
+        const ex=getLog(dk,0);
+        const [dw,setDw]=useState(ex?.weight||suggested[di]||"");
+        const [dr,setDr]=useState(ex?.reps||"");
+        const done=isDone(dk,0);
+        const hint=repParts[di]||repParts[repParts.length-1]||"failure";
         return(
-          <div key={di} className="rh" style={{display:"grid",gridTemplateColumns:"22px 48px 1fr 1fr 30px 30px",gap:4,alignItems:"center",padding:"3px 8px",opacity:done?.4:1,transition:"opacity .2s"}}>
-            <div style={{width:16,height:16,borderRadius:3,background:done?"#E87B6E":"#1A1A1A",border:`1px solid ${done?"#E87B6E":"#2A2020"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:800,color:done?"#000":"#5A3030"}}>D{di+1}</div>
-            <div style={{fontSize:10,fontWeight:700,color:"#E87B6E",letterSpacing:".02em"}}>{repHint}</div>
-            <input type="number" placeholder={suggestedWeights[di]?`~${suggestedWeights[di]}`:"lbs"} value={dw} onChange={e=>setDw(e.target.value)} min={0} step={2.5} disabled={done} style={{opacity:done?.2:1,fontSize:11,padding:"3px 4px",borderColor:"#3A2020"}}/>
-            <input type="number" placeholder="reps" value={dr} onChange={e=>setDr(e.target.value)} min={0} disabled={done} style={{opacity:done?.2:1,fontSize:11,padding:"3px 4px",borderColor:"#3A2020"}}/>
+          <div key={di} className="rh" style={{display:"grid",gridTemplateColumns:"20px 46px 1fr 1fr 28px 28px",gap:4,alignItems:"center",padding:"3px 8px",opacity:done?.35:1}}>
+            <div style={{width:16,height:16,borderRadius:3,background:done?"#E87B6E":"#1A1010",border:`1px solid ${done?"#E87B6E":"#3A2020"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:800,color:done?"#000":"#5A2A2A"}}>D{di+1}</div>
+            <div style={{fontSize:9,fontWeight:700,color:"#E87B6E"}}>{hint}</div>
+            <input type="number" placeholder={suggested[di]?`~${suggested[di]}`:"lbs"} value={dw} onChange={e=>setDw(e.target.value)} min={0} step={2.5} disabled={done} style={{opacity:done?.15:1,fontSize:11,padding:"3px 4px",borderColor:"#3A2020"}}/>
+            <input type="number" placeholder="reps" value={dr} onChange={e=>setDr(e.target.value)} min={0} disabled={done} style={{opacity:done?.15:1,fontSize:11,padding:"3px 4px",borderColor:"#3A2020"}}/>
             <div/>
-            <button className="hov" onClick={complete} style={{width:26,height:26,borderRadius:5,background:done?"#E87B6E":"#1A1010",border:`1px solid ${done?"#E87B6E":"#3A2020"}`,color:done?"#000":"#5A3030",fontSize:done?10:12,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all .2s"}}>{done?"✓":"○"}</button>
+            <button className="hov" onClick={()=>{logSet(dk,0,dw,dr);toggleDone(dk,0);if(!done)showToast(`D${di+1} logged ✓`);}} style={{width:24,height:24,borderRadius:4,background:done?"#E87B6E":"#1A1010",border:`1px solid ${done?"#E87B6E":"#3A2020"}`,color:done?"#000":"#5A2A2A",fontSize:done?9:11,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all .15s"}}>{done?"✓":"○"}</button>
           </div>
         );
       })}
@@ -898,35 +1034,36 @@ function SetRow({setNum,target,exId,setIdx,sc,rest,logSet,getLog,isDone,toggleDo
   const [w,setW]=useState(ex?.weight||"");
   const [r,setR]=useState(ex?.reps||"");
   const done=isDone(exId,setIdx);
+  const noInputOk=["—","30–35 min","40–45 min","35–40 min","40m","10 min","12 min","20 min","15–20 min","60s","30s","20s","25s","35s","40s"].some(v=>target.includes(v.replace(/–.*/,"")));
   const complete=()=>{
-    if(!w&&!r&&!["—","35–40 min","35–45 min","30–35 min","40m","10 min","20 min","15–20 min"].includes(target)){showToast("Enter weight or reps first","err");return;}
+    if(!w&&!r&&!noInputOk){showToast("Enter weight or reps first","err");return;}
     logSet(exId,setIdx,w,r);
     toggleDone(exId,setIdx);
     if(!done){
-      showToast(hasDrops?`Set ${setNum} done — drop set unlocked ↓`:`Set ${setNum} logged ✓`);
-      if(rest.secs>0)startTimer(rest.secs,rest.label,rest.cardiac,sc);
+      showToast(hasDrops?`Set ${setNum} ✓ — drop set unlocked ↓`:`Set ${setNum} logged ✓`);
+      if(rest.secs>0)startTimer(rest.secs,`REST — ${rest.label}`,rest.cardiac,sc);
     }
   };
   return(
-    <div className="rh" style={{display:"grid",gridTemplateColumns:"22px 48px 1fr 1fr 30px 30px",gap:4,alignItems:"center",padding:"3px 0",opacity:done&&!hasDrops?.4:1,transition:"opacity .2s"}}>
-      <div style={{width:18,height:18,borderRadius:4,background:done?sc:"#1A1A1A",border:`1px solid ${done?sc:"#252525"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:800,color:done?"#000":"#3A3A3A",transition:"all .2s"}}>{setNum}</div>
-      <div style={{display:"flex",alignItems:"center",gap:3}}>
-        <span style={{fontSize:11,fontWeight:800,color:"#C9A84C",letterSpacing:".03em"}}>{target}</span>
-        {hasDrops&&<span style={{fontSize:9,color:"#E87B6E",fontWeight:800}}>↓</span>}
+    <div className="rh" style={{display:"grid",gridTemplateColumns:"20px 46px 1fr 1fr 28px 28px",gap:4,alignItems:"center",padding:"3px 0",opacity:done&&!hasDrops?.35:1,transition:"opacity .2s"}}>
+      <div style={{width:17,height:17,borderRadius:4,background:done?sc:"#1A1A1A",border:`1px solid ${done?sc:"#252525"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:7.5,fontWeight:800,color:done?"#000":"#333",transition:"all .2s"}}>{setNum}</div>
+      <div style={{display:"flex",alignItems:"center",gap:2}}>
+        <span style={{fontSize:10,fontWeight:800,color:"#C9A84C"}}>{target}</span>
+        {hasDrops&&<span style={{fontSize:9,color:"#E87B6E",fontWeight:800,lineHeight:1}}>↓</span>}
       </div>
-      <input type="number" placeholder="lbs" value={w} onChange={e=>setW(e.target.value)} min={0} step={2.5} disabled={done} style={{opacity:done?.2:1,fontSize:12,padding:"4px 5px"}}/>
-      <input type="number" placeholder="reps" value={r} onChange={e=>setR(e.target.value)} min={0} disabled={done} style={{opacity:done?.2:1,fontSize:12,padding:"4px 5px"}}/>
-      <button className="hov" onClick={()=>rest.secs>0&&startTimer(rest.secs,rest.label,rest.cardiac,sc)} style={{width:26,height:26,borderRadius:5,background:"#141414",border:"1px solid #1E1E1E",color:rest.secs>0?sc:"#2A2A2A",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",opacity:rest.secs>0?1:.3}}>⏱</button>
-      <button className="hov" onClick={complete} style={{width:26,height:26,borderRadius:5,background:done?sc:"#141414",border:`1px solid ${done?sc:"#1E1E1E"}`,color:done?"#000":"#3A3A3A",fontSize:done?10:13,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all .2s"}}>{done?"✓":"○"}</button>
+      <input type="number" placeholder="lbs" value={w} onChange={e=>setW(e.target.value)} min={0} step={2.5} disabled={done} style={{opacity:done?.15:1,fontSize:11,padding:"3px 4px"}}/>
+      <input type="number" placeholder="reps" value={r} onChange={e=>setR(e.target.value)} min={0} disabled={done} style={{opacity:done?.15:1,fontSize:11,padding:"3px 4px"}}/>
+      <button className="hov" onClick={()=>rest.secs>0&&startTimer(rest.secs,`REST — ${rest.label}`,rest.cardiac,sc)} style={{width:24,height:24,borderRadius:4,background:"#141414",border:"1px solid #1E1E1E",color:rest.secs>0?sc:"#222",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",opacity:rest.secs>0?1:.25}}>⏱</button>
+      <button className="hov" onClick={complete} style={{width:24,height:24,borderRadius:4,background:done?sc:"#141414",border:`1px solid ${done?sc:"#1E1E1E"}`,color:done?"#000":"#333",fontSize:done?9:12,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all .15s"}}>{done?"✓":"○"}</button>
     </div>
   );
 }
 
 function Pill({label,val,color}){
   return(
-    <div style={{display:"flex",alignItems:"center",gap:3,background:"#181818",border:"1px solid #222",borderRadius:4,padding:"1px 5px"}}>
-      <span style={{fontSize:7.5,color:"#3A3A3A",fontWeight:700,letterSpacing:".1em"}}>{label}</span>
-      <span style={{fontSize:9.5,color,fontWeight:800}}>{val}</span>
+    <div style={{display:"flex",alignItems:"center",gap:3,background:"#181818",border:"1px solid #1E1E1E",borderRadius:4,padding:"1px 5px"}}>
+      <span style={{fontSize:7,color:"#333",fontWeight:700,letterSpacing:".1em"}}>{label}</span>
+      <span style={{fontSize:9,color,fontWeight:800}}>{val}</span>
     </div>
   );
 }
@@ -943,34 +1080,34 @@ function RestTimer({timer,onDismiss,onAdjust,onPause,onAdd}){
       <div style={{maxWidth:540,margin:"0 auto"}}>
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
           <div>
-            <div style={{fontSize:8,color:"#555",fontWeight:700,letterSpacing:".18em",marginBottom:1}}>REST TIMER</div>
-            <div style={{fontSize:13,fontWeight:800,color:arc,letterSpacing:".08em"}}>{timer.label}</div>
+            <div style={{fontSize:8,color:"#444",fontWeight:700,letterSpacing:".18em",marginBottom:1}}>REST TIMER</div>
+            <div style={{fontSize:12,fontWeight:800,color:arc,letterSpacing:".06em"}}>{timer.label}</div>
           </div>
-          <button className="hov" onClick={onDismiss} style={{background:"#181818",border:"1px solid #2A2A2A",color:"#555",borderRadius:7,width:28,height:28,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>✕</button>
+          <button className="hov" onClick={onDismiss} style={{background:"#181818",border:"1px solid #2A2A2A",color:"#444",borderRadius:7,width:28,height:28,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>✕</button>
         </div>
         <div style={{display:"flex",gap:14,alignItems:"center"}}>
-          <div style={{position:"relative",width:120,height:120,flexShrink:0}}>
-            <svg width={120} height={120} style={{transform:"rotate(-90deg)"}}>
-              <circle cx={60} cy={60} r={R} fill="none" stroke="#1C1C1C" strokeWidth={8}/>
-              <circle cx={60} cy={60} r={R} fill="none" stroke={arc} strokeWidth={8} strokeDasharray={`${C*pct} ${C}`} strokeLinecap="round" style={{transition:"stroke-dasharray 0.95s linear,stroke .3s"}}/>
+          <div style={{position:"relative",width:118,height:118,flexShrink:0}}>
+            <svg width={118} height={118} style={{transform:"rotate(-90deg)"}}>
+              <circle cx={59} cy={59} r={R} fill="none" stroke="#1C1C1C" strokeWidth={8}/>
+              <circle cx={59} cy={59} r={R} fill="none" stroke={arc} strokeWidth={8} strokeDasharray={`${C*pct} ${C}`} strokeLinecap="round" style={{transition:"stroke-dasharray 0.95s linear,stroke .3s"}}/>
             </svg>
             <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-              <div style={{fontSize:done?22:34,fontWeight:900,color:done?"#58A45C":low?"#E87B6E":"#EEE",lineHeight:1,animation:low&&!done?"cp .7s infinite":"none",transition:"color .25s"}}>{done?"GO!":ft(timer.remaining)}</div>
-              {!done&&<div style={{fontSize:8,color:"#333",marginTop:1,fontWeight:700}}>/ {ft(timer.total)}</div>}
+              <div style={{fontSize:done?22:34,fontWeight:900,color:done?"#58A45C":low?"#E87B6E":"#EEE",lineHeight:1,animation:low&&!done?"cp .7s infinite":"none"}}>{done?"GO!":ft(timer.remaining)}</div>
+              {!done&&<div style={{fontSize:7.5,color:"#333",marginTop:1,fontWeight:700}}>/ {ft(timer.total)}</div>}
             </div>
           </div>
-          <div style={{flex:1,display:"flex",flexDirection:"column",gap:7}}>
-            {timer.cardiac&&<div style={{background:"rgba(192,57,43,.07)",border:"1px solid rgba(192,57,43,.2)",borderRadius:7,padding:"5px 8px"}}><div style={{fontSize:7.5,color:"#E87B6E",fontWeight:700,letterSpacing:".12em",marginBottom:1}}>❤️  CARDIAC</div><div style={{fontSize:9,color:"#C07060",fontFamily:"Barlow,sans-serif",lineHeight:1.4}}>{timer.cardiac}</div></div>}
+          <div style={{flex:1,display:"flex",flexDirection:"column",gap:6}}>
+            {timer.cardiac&&<div style={{background:"rgba(232,123,110,.07)",border:"1px solid rgba(232,123,110,.2)",borderRadius:7,padding:"5px 8px"}}><div style={{fontSize:7.5,color:"#E87B6E",fontWeight:700,letterSpacing:".1em",marginBottom:1}}>❤️ CARDIAC</div><div style={{fontSize:9,color:"#C07060",fontFamily:"Barlow,sans-serif",lineHeight:1.4}}>{timer.cardiac}</div></div>}
             <div style={{display:"flex",gap:4}}>
               {[-30,-15,+15,+30].map(d=>(
                 <button key={d} className="hov" onClick={()=>onAdjust(d)} style={{flex:1,height:30,borderRadius:6,cursor:"pointer",background:"#181818",border:"1px solid #252525",color:d<0?"#E87B6E":"#7EB8D4",fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>{d>0?"+":""}{d}s</button>
               ))}
             </div>
             <div style={{display:"flex",gap:5}}>
-              <button className="hov" onClick={onPause} style={{flex:1,height:36,borderRadius:8,cursor:"pointer",background:timer.active?"#181818":"#182818",border:`1px solid ${timer.active?"#2A2A2A":"#3A5A3A"}`,color:timer.active?"#777":"#58A45C",fontSize:11,fontWeight:800,letterSpacing:".08em",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>{timer.active?"⏸ PAUSE":"▶ RESUME"}</button>
-              <button className="hov" onClick={onDismiss} style={{flex:1,height:36,borderRadius:8,cursor:"pointer",background:done?"#182818":"#181818",border:`1px solid ${done?"#4A8A4A":"#2A2A2A"}`,color:done?"#58A45C":"#666",fontSize:11,fontWeight:800,letterSpacing:".08em",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>{done?"✓ NEXT SET":"⏭ SKIP"}</button>
+              <button className="hov" onClick={onPause} style={{flex:1,height:35,borderRadius:8,cursor:"pointer",background:timer.active?"#181818":"#182818",border:`1px solid ${timer.active?"#2A2A2A":"#3A5A3A"}`,color:timer.active?"#666":"#58A45C",fontSize:10,fontWeight:800,letterSpacing:".08em",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>{timer.active?"⏸ PAUSE":"▶ RESUME"}</button>
+              <button className="hov" onClick={onDismiss} style={{flex:1,height:35,borderRadius:8,cursor:"pointer",background:done?"#182818":"#181818",border:`1px solid ${done?"#4A8A4A":"#2A2A2A"}`,color:done?"#58A45C":"#555",fontSize:10,fontWeight:800,letterSpacing:".08em",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>{done?"✓ NEXT SET":"⏭ SKIP"}</button>
             </div>
-            {!done&&<div style={{display:"flex",gap:4,alignItems:"center"}}><span style={{fontSize:8,color:"#2A2A2A",fontWeight:700}}>ADD:</span>{[30,60].map(s=><button key={s} className="hov" onClick={()=>onAdd(s)} style={{height:24,padding:"0 8px",borderRadius:5,cursor:"pointer",background:"#141414",border:"1px solid #1E1E1E",color:"#777",fontSize:9,fontWeight:700,display:"flex",alignItems:"center"}}>+{s}s</button>)}<span style={{fontSize:8,color:"#222"}}>if HR high</span></div>}
+            {!done&&<div style={{display:"flex",gap:4,alignItems:"center"}}><span style={{fontSize:7.5,color:"#2A2A2A",fontWeight:700}}>ADD:</span>{[30,60].map(s=><button key={s} className="hov" onClick={()=>onAdd(s)} style={{height:22,padding:"0 7px",borderRadius:4,cursor:"pointer",background:"#141414",border:"1px solid #1E1E1E",color:"#666",fontSize:9,fontWeight:700,display:"flex",alignItems:"center"}}>+{s}s</button>)}<span style={{fontSize:7.5,color:"#222"}}>if HR still high</span></div>}
           </div>
         </div>
       </div>
@@ -979,7 +1116,7 @@ function RestTimer({timer,onDismiss,onAdjust,onPause,onAdd}){
 }
 
 // ─── HISTORY VIEW ─────────────────────────────────────────────────────────────
-function HistoryView({store,weekKey,program,phase}){
+function HistoryView({store,weekKey,phase}){
   const byDay={};
   const exMap={};
   Object.values(PROGRAMS).forEach(prog=>prog.forEach(d=>d.series.forEach(s=>s.exercises.forEach(ex=>{exMap[ex.id]=ex.name;}))));
@@ -997,7 +1134,12 @@ function HistoryView({store,weekKey,program,phase}){
         <div style={{fontSize:20,fontWeight:900,color:"#EEE",letterSpacing:".1em"}}>THIS WEEK'S LOG</div>
         <div style={{fontSize:10,color:"#444",fontFamily:"Barlow,sans-serif",marginTop:2}}>Week {weekKey} · Saved to device · Resets each new week</div>
       </div>
-      {Object.keys(byDay).length===0&&<div style={{background:"#0F0F0F",border:"1px solid #1E1E1E",borderRadius:12,padding:36,textAlign:"center"}}><div style={{fontSize:32,marginBottom:10}}>📋</div><div style={{fontSize:13,color:"#444",fontFamily:"Barlow,sans-serif"}}>Nothing logged yet this week.</div></div>}
+      {Object.keys(byDay).length===0&&(
+        <div style={{background:"#0F0F0F",border:"1px solid #1E1E1E",borderRadius:12,padding:36,textAlign:"center"}}>
+          <div style={{fontSize:32,marginBottom:10}}>📋</div>
+          <div style={{fontSize:13,color:"#444",fontFamily:"Barlow,sans-serif"}}>Nothing logged yet this week.</div>
+        </div>
+      )}
       {Object.entries(byDay).map(([key,{phase:ph,day:di,exercises}])=>{
         const phData=PHASES[ph-1];
         const prog=PROGRAMS[ph]||PROGRAMS[2];
@@ -1006,20 +1148,20 @@ function HistoryView({store,weekKey,program,phase}){
         return(
           <div key={key} style={{background:"#0F0F0F",border:"1px solid #1E1E1E",borderLeft:`4px solid ${phData.color}`,borderRadius:12,marginBottom:10,overflow:"hidden"}}>
             <div style={{background:"#141414",padding:"8px 12px",borderBottom:"1px solid #1A1A1A",display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontSize:9,background:phData.color,color:"#000",fontWeight:800,borderRadius:3,padding:"1px 5px",letterSpacing:".08em"}}>P{ph}</span>
+              <span style={{fontSize:8,background:phData.color,color:"#000",fontWeight:800,borderRadius:3,padding:"1px 5px"}}>P{ph}</span>
               <span style={{fontSize:13,fontWeight:900,color:phData.color}}>DAY {dayData.day}</span>
-              <span style={{fontSize:11,fontWeight:700,color:"#555"}}>{dayData.label} — {dayData.sub}</span>
+              <span style={{fontSize:10,fontWeight:700,color:"#444"}}>{dayData.label} — {dayData.sub}</span>
             </div>
             {Object.entries(exercises).map(([eid,sets])=>(
               <div key={eid} style={{padding:"8px 12px",borderBottom:"1px solid #161616"}}>
-                <div style={{fontSize:11,fontWeight:700,color:"#BBB",marginBottom:5}}>{exMap[eid]||eid}</div>
+                <div style={{fontSize:11,fontWeight:700,color:"#AAA",marginBottom:5}}>{exMap[eid]||eid}</div>
                 <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
                   {sets.sort((a,b)=>a.si-b.si).map((s,i)=>(
-                    <div key={i} style={{background:"#181818",border:"1px solid #222",borderRadius:6,padding:"4px 8px",display:"flex",flexDirection:"column",alignItems:"center",gap:1,minWidth:48}}>
-                      <span style={{fontSize:7.5,color:"#3A3A3A",fontWeight:700}}>SET {s.si+1}</span>
-                      {s.weight&&<span style={{fontSize:12,fontWeight:800,color:"#C9A84C"}}>{s.weight}<span style={{fontSize:7,color:"#555"}}>lb</span></span>}
-                      {s.reps&&<span style={{fontSize:10,fontWeight:700,color:"#7EB8D4"}}>{s.reps}<span style={{fontSize:7,color:"#555"}}>reps</span></span>}
-                      {!s.weight&&!s.reps&&<span style={{fontSize:9,color:"#3A3A3A"}}>✓</span>}
+                    <div key={i} style={{background:"#181818",border:"1px solid #222",borderRadius:6,padding:"4px 8px",display:"flex",flexDirection:"column",alignItems:"center",gap:1,minWidth:46}}>
+                      <span style={{fontSize:7,color:"#333",fontWeight:700}}>{s.si===0?"SET 1":`S${s.si+1}`}</span>
+                      {s.weight&&<span style={{fontSize:12,fontWeight:800,color:"#C9A84C"}}>{s.weight}<span style={{fontSize:6.5,color:"#444"}}>lb</span></span>}
+                      {s.reps&&<span style={{fontSize:10,fontWeight:700,color:"#7EB8D4"}}>{s.reps}<span style={{fontSize:6.5,color:"#444"}}>reps</span></span>}
+                      {!s.weight&&!s.reps&&<span style={{fontSize:9,color:"#2A2A2A"}}>✓</span>}
                     </div>
                   ))}
                 </div>
